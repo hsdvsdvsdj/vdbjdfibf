@@ -13,22 +13,7 @@ export default function Landing() {
             одном месте.
           </p>
 
-          <div
-            style={{
-              display: "flex",
-              gap: 12,
-              justifyContent: "center",
-              flexWrap: "wrap",
-            }}
-          >
-            <Link href="/login" className="btn btn-primary">
-              Войти
-            </Link>
 
-            <Link href="/register" className="btn btn-secondary">
-              Зарегистрироваться
-            </Link>
-          </div>
         </section>
 
         <section className="grid grid-3">

@@ -1,10 +1,10 @@
+import OrderChat from "../../components/OrderChat";
 import RootLayoutComponent from "../../components/RootLayout";
-import Balance from "../../components/Balance";
 
-export default function Page() {
+export default function ChatPage() {
   return (
     <RootLayoutComponent>
-      <Balance />
+      <OrderChat orderId="general" />
     </RootLayoutComponent>
   );
 }
