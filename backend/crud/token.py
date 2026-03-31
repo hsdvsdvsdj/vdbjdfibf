@@ -9,13 +9,13 @@ async def save_refresh_token(session: AsyncSession, token: str, user_id: int, ex
     refresh_token = RefreshToken(
         token=token,
         user_id=user_id,
-        expires_at=expires_at
+        expires_at=expires_at,
+        created_at=datetime.now(timezone.utc)
     )
     session.add(refresh_token)
     await session.commit()
     await session.refresh(refresh_token)
     return refresh_token
-
 
 async def get_refresh_token(session: AsyncSession, token: str):
     result = await session.execute(

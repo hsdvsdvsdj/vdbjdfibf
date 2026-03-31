@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from routers.auth import router as auth_router
 
-app = FastAPI(title="JWT Auth API")
+app = FastAPI(title="Back", debug=True)
 
 app.add_middleware(
     CORSMiddleware,

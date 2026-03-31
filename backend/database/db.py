@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 
 from database.models import Base
 
+
 load_dotenv()
 
 DATABASE_URL = os.getenv("DATABASE_URL")
@@ -21,7 +22,6 @@ async_session_maker = sessionmaker(
     expire_on_commit=False
 )
 
-
 class DatabaseInteraction:
     @staticmethod
     async def get_async_session():
@@ -30,6 +30,7 @@ class DatabaseInteraction:
 
     @staticmethod
     async def create_tables():
+        print(DATABASE_URL)
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
         print("Таблицы успешно созданы")
