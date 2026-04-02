@@ -10,13 +10,13 @@ interface Skill {
   id: string;
   title: string;
   description: string;
-  price: number;
+  price?: number;
   duration: number;
-  instructor: string;
+  instructor?: string;
   instructorId: string;
-  rating: number;
+  rating?: number;
   category: string;
-  reviewsCount: number;
+  reviewsCount?: number;
 }
 
 const mockSkills: Skill[] = [

@@ -264,8 +264,8 @@ export default function UserProfile({ userId }: Props) {
             style={{
               padding: "24px",
               borderRadius: "24px",
-              background: "#f0fdf4",
-              border: "2px solid #22c55e",
+              background: "#16a34a",
+              border: "2px solid #16a34a",
             }}
           >
             <h2
@@ -273,20 +273,20 @@ export default function UserProfile({ userId }: Props) {
                 margin: "0 0 16px",
                 fontSize: "18px",
                 fontWeight: 700,
-                color: "#16a34a",
+                color: "#ffffff",
               }}
             >
               📋 Контакты
             </h2>
             <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
               <div>
-                <p style={{ margin: "0 0 4px", fontSize: "12px", color: "#16a34a", fontWeight: 600 }}>
+                <p style={{ margin: "0 0 4px", fontSize: "12px", color: "#d1fae5", fontWeight: 600 }}>
                   EMAIL
                 </p>
                 <a
                   href={`mailto:${user.email}`}
                   style={{
-                    color: "var(--color-primary)",
+                    color: "#ffffff",
                     textDecoration: "none",
                     fontWeight: 500,
                     fontSize: "14px",
@@ -296,13 +296,13 @@ export default function UserProfile({ userId }: Props) {
                 </a>
               </div>
               <div>
-                <p style={{ margin: "0 0 4px", fontSize: "12px", color: "#16a34a", fontWeight: 600 }}>
+                <p style={{ margin: "0 0 4px", fontSize: "12px", color: "#d1fae5", fontWeight: 600 }}>
                   ТЕЛЕФОН
                 </p>
                 <a
                   href={`tel:${user.phone}`}
                   style={{
-                    color: "var(--color-primary)",
+                    color: "#ffffff",
                     textDecoration: "none",
                     fontWeight: 500,
                     fontSize: "14px",
@@ -312,7 +312,7 @@ export default function UserProfile({ userId }: Props) {
                 </a>
               </div>
               <div>
-                <p style={{ margin: "0 0 4px", fontSize: "12px", color: "#16a34a", fontWeight: 600 }}>
+                <p style={{ margin: "0 0 4px", fontSize: "12px", color: "#d1fae5", fontWeight: 600 }}>
                   TELEGRAM
                 </p>
                 <a
@@ -320,7 +320,7 @@ export default function UserProfile({ userId }: Props) {
                   target="_blank"
                   rel="noopener noreferrer"
                   style={{
-                    color: "var(--color-primary)",
+                    color: "#ffffff",
                     textDecoration: "none",
                     fontWeight: 500,
                     fontSize: "14px",

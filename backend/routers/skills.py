@@ -19,26 +19,28 @@ async def create_skill(
     skill = await create_classified(
         session=session,
         user_id=current_user.id,
-        name=skill_data.name,
+        title=skill_data.title,
         description=skill_data.description,
-        learnings=skill_data.learnings,
-        cost=skill_data.cost,
-        coef_prom=skill_data.coef_prom,
+        category=skill_data.category,
+        duration=skill_data.duration,
     )
     return skill
 
 
 @router.get("", response_model=list[SkillResponseSchema])
 async def get_skills(
-    name: str | None = Query(None),
+    title: str | None = Query(None),
+    category: str | None = Query(None),
     user_id: int | None = Query(None),
     skip: int = 0,
     limit: int = 100,
     session: AsyncSession = Depends(DatabaseInteraction.get_async_session),
 ):
     filters = {}
-    if name:
-        filters["name"] = name
+    if title:
+        filters["title"] = title
+    if category:
+        filters["category"] = category
     if user_id is not None:
         filters["user_id"] = user_id
 

@@ -57,9 +57,12 @@ class Classified(Base):
 
     class_id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
-    name = Column(String(100), nullable=False)
+    title = Column(String(100), nullable=False)
     description = Column(Text, nullable=True)
-    learnings = Column(Text, nullable=True)
+    category = Column(String(50), nullable=True)
+    duration = Column(Integer, nullable=True)  # в минутах
+    name = Column(String(100), nullable=True)  # для совместимости
+    learnings = Column(Text, nullable=True)  # для совместимости
     cost = Column(Numeric(10, 2), nullable=True)
     coef_prom = Column(Numeric(10, 2), nullable=True)
 

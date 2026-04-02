@@ -50,8 +50,15 @@ class ApiClient {
 
   private async handleResponse<T>(response: Response): Promise<T> {
     if (!response.ok) {
-      const error = (await response.json()) as ApiError;
-      throw new Error(error.detail || "API error");
+      try {
+        const error = (await response.json()) as ApiError;
+        throw new Error(error.detail || `HTTP ${response.status}`);
+      } catch (err: any) {
+        if (err instanceof Error && err.message.includes("HTTP")) {
+          throw err;
+        }
+        throw new Error(`API error ${response.status}: ${response.statusText}`);
+      }
     }
     return response.json() as Promise<T>;
   }

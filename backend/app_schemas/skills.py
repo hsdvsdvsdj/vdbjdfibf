@@ -3,8 +3,12 @@ from pydantic import BaseModel, condecimal
 
 
 class SkillBaseSchema(BaseModel):
-    name: str
+    title: str
     description: Optional[str] = None
+    category: Optional[str] = None
+    duration: Optional[int] = None  # в минутах
+    # для совместимости со старой схемой
+    name: Optional[str] = None
     learnings: Optional[str] = None
     cost: Optional[condecimal(max_digits=10, decimal_places=2)] = None
     coef_prom: Optional[condecimal(max_digits=10, decimal_places=2)] = None
@@ -15,8 +19,11 @@ class SkillCreateSchema(SkillBaseSchema):
 
 
 class SkillUpdateSchema(BaseModel):
-    name: Optional[str] = None
+    title: Optional[str] = None
     description: Optional[str] = None
+    category: Optional[str] = None
+    duration: Optional[int] = None
+    name: Optional[str] = None
     learnings: Optional[str] = None
     cost: Optional[condecimal(max_digits=10, decimal_places=2)] = None
     coef_prom: Optional[condecimal(max_digits=10, decimal_places=2)] = None

@@ -3,6 +3,20 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
+const CATEGORIES = [
+  "Дизайн",
+  "Программирование",
+  "Языки",
+  "Музыка",
+  "Кулинария",
+  "IT",
+  "Здоровье",
+  "Искусство",
+  "Спорт",
+  "Бизнес",
+  "Другое"
+];
+
 export default function CreateSkill() {
   const router = useRouter();
 
@@ -42,6 +56,17 @@ export default function CreateSkill() {
             Поделись своими знаниями с другими пользователями
           </p>
 
+          <style>{`
+            input[type="number"]::-webkit-outer-spin-button,
+            input[type="number"]::-webkit-inner-spin-button {
+              -webkit-appearance: none;
+              margin: 0;
+            }
+            input[type="number"] {
+              -moz-appearance: textfield;
+            }
+          `}</style>
+
           <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
             {/* Название */}
             <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
@@ -62,24 +87,36 @@ export default function CreateSkill() {
               <label style={{ fontWeight: "600", fontSize: "14px", color: "var(--color-text-primary)" }}>
                 Категория
               </label>
-              <input
+              <select
                 className="input"
-                type="text"
-                placeholder="Например: Дизайн, Программирование, Языки"
+                style={{
+                  cursor: "pointer",
+                  fontFamily: "inherit",
+                  fontSize: "14px"
+                }}
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
-              />
+              >
+                <option value="">-- Выбери категорию --</option>
+                {CATEGORIES.map((cat) => (
+                  <option key={cat} value={cat}>
+                    {cat}
+                  </option>
+                ))}
+              </select>
             </div>
 
             {/* Длительность */}
             <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
               <label style={{ fontWeight: "600", fontSize: "14px", color: "var(--color-text-primary)" }}>
-                Длительность (минут)
+                Длительность (минут, макс. 180)
               </label>
               <input
                 className="input"
                 type="number"
                 placeholder="60"
+                min="1"
+                max="180"
                 value={duration}
                 onChange={(e) => setDuration(e.target.value)}
               />
@@ -96,6 +133,10 @@ export default function CreateSkill() {
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 rows={5}
+                style={{
+                  resize: "none",
+                  fontFamily: "inherit"
+                }}
               />
             </div>
 
