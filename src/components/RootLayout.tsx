@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext";
+import Logo from "./Logo";
 
 export default function RootLayoutComponent({
   children,
@@ -13,11 +13,6 @@ export default function RootLayoutComponent({
   const pathname = usePathname();
   const router = useRouter();
   const { user, isAuthenticated, logout } = useAuth();
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   const isPublicPage = pathname === "/" || pathname === "/login" || pathname === "/register";
 
@@ -26,10 +21,6 @@ export default function RootLayoutComponent({
     router.push("/");
   };
 
-  if (!mounted) {
-    return <>{children}</>;
-  }
-
   return (
     <>
       <header className="header">
@@ -37,69 +28,81 @@ export default function RootLayoutComponent({
           <Link
             href={isAuthenticated ? "/home" : "/"}
             className="title"
-            style={{ margin: 0, fontSize: 24 }}
+            style={{ 
+              margin: 0, 
+              fontSize: 22, 
+              fontWeight: 700,
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+              textDecoration: "none",
+              color: "inherit"
+            }}
           >
+            <div style={{ display: "flex", alignItems: "center", flexShrink: 0 }}>
+              <Logo />
+            </div>
             SkillSwap
           </Link>
 
-          {!isPublicPage && isAuthenticated && (
-            <nav className="nav">
-              <Link
-                href="/home"
-                className={`nav-link ${pathname === "/home" ? "active" : ""}`}
-              >
-                Главная
-              </Link>
-
-              <Link
-                href="/search"
-                className={`nav-link ${pathname === "/search" ? "active" : ""}`}
-              >
-                Поиск
-              </Link>
-
-              <Link
-                href="/orders"
-                className={`nav-link ${pathname === "/orders" ? "active" : ""}`}
-              >
-                Заказы
-              </Link>
-
-              <Link
-                href="/balance"
-                className={`nav-link ${pathname === "/balance" ? "active" : ""}`}
-              >
-                Баланс
-              </Link>
-
-              <Link
-                href="/reviews"
-                className={`nav-link ${pathname === "/reviews" ? "active" : ""}`}
-              >
-                Отзывы
-              </Link>
-
-              <Link
-                href="/profile"
-                className={`nav-link ${pathname === "/profile" ? "active" : ""}`}
-              >
-                Профиль
-              </Link>
-
-              {user?.role === "moderator" && (
+          <nav className="nav">
+            {!isPublicPage && isAuthenticated ? (
+              <>
                 <Link
-                  href="/moderator"
-                  className={`nav-link ${pathname === "/moderator" ? "active" : ""}`}
+                  href="/home"
+                  className={`nav-link ${pathname === "/home" ? "active" : ""}`}
                 >
-                  Модерация
+                  Главная
                 </Link>
-              )}
-
-              <button className="btn btn-secondary" onClick={handleLogout}>
-                Выйти
-              </button>
-            </nav>
-          )}
+                <Link
+                  href="/search"
+                  className={`nav-link ${pathname === "/search" ? "active" : ""}`}
+                >
+                  Поиск
+                </Link>
+                <Link
+                  href="/orders"
+                  className={`nav-link ${pathname === "/orders" || pathname.startsWith("/order") ? "active" : ""}`}
+                >
+                  Заказы
+                </Link>
+                <Link
+                  href="/chat"
+                  className={`nav-link ${pathname === "/chat" || pathname.includes("/chat") ? "active" : ""}`}
+                >
+                  Чат
+                </Link>
+                <Link
+                  href="/reviews"
+                  className={`nav-link ${pathname === "/reviews" ? "active" : ""}`}
+                >
+                  Отзывы
+                </Link>
+                <Link
+                  href="/profile"
+                  className={`nav-link ${pathname === "/profile" ? "active" : ""}`}
+                >
+                  Профиль
+                </Link>
+                <button 
+                  className="btn btn-primary" 
+                  onClick={handleLogout}
+                  style={{ padding: "8px 14px", fontSize: "13px", whiteSpace: "nowrap" }}
+                >
+                  Выйти
+                </button>
+              </>
+            ) : (
+              <>
+                <Link href="/login" className="btn btn-primary" style={{ padding: "8px 14px", fontSize: "13px" }}>
+                  Вход
+                </Link>
+                <Link href="/register" className="btn btn-primary" style={{ padding: "8px 14px", fontSize: "13px" }}>
+                  Регистрация
+                </Link>
+              </>
+            )}
+          </nav>
         </div>
       </header>
 

@@ -54,3 +54,18 @@ async def create_user(
     await session.commit()
     await session.refresh(user)
     return user
+
+
+async def update_user(session: AsyncSession, user_id: int, data: dict):
+    user = await get_user_by_id(session, user_id)
+    if not user:
+        return None
+
+    for key, value in data.items():
+        if hasattr(user, key) and value is not None and key != "id" and key != "login":
+            setattr(user, key, value)
+
+    session.add(user)
+    await session.commit()
+    await session.refresh(user)
+    return user

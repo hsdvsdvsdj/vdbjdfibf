@@ -35,6 +35,8 @@ class User(Base):
         back_populates="user2",
         cascade="all, delete-orphan"
     )
+    orders_as_buyer = relationship("Order", foreign_keys="Order.buyer_id", back_populates="buyer", cascade="all, delete-orphan")
+    orders_as_seller = relationship("Order", foreign_keys="Order.seller_id", back_populates="seller", cascade="all, delete-orphan")
     messages = relationship("Message", back_populates="user", cascade="all, delete-orphan")
 
 
@@ -65,6 +67,23 @@ class Classified(Base):
     categories = relationship("CatClass", back_populates="classified", cascade="all, delete-orphan")
     reviews = relationship("Review", back_populates="classified", cascade="all, delete-orphan")
     chats = relationship("Chat", back_populates="classified", cascade="all, delete-orphan")
+    orders = relationship("Order", back_populates="classified", cascade="all, delete-orphan")
+
+
+class Order(Base):
+    __tablename__ = "orders"
+
+    id_order = Column(Integer, primary_key=True, index=True)
+    class_id = Column(Integer, ForeignKey("classifieds.class_id", ondelete="CASCADE"), nullable=False)
+    buyer_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    seller_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    status = Column(String(50), nullable=False, default="pending")
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    classified = relationship("Classified", back_populates="orders")
+    buyer = relationship("User", foreign_keys=[buyer_id], back_populates="orders_as_buyer")
+    seller = relationship("User", foreign_keys=[seller_id], back_populates="orders_as_seller")
 
 
 class Category(Base):

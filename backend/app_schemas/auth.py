@@ -4,9 +4,7 @@ from pydantic import BaseModel, EmailStr
 
 class RegisterSchema(BaseModel):
     login: str
-    email: Optional[EmailStr] = None
     password: str
-    nickname: Optional[str] = None
 
 
 class LoginSchema(BaseModel):

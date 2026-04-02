@@ -13,7 +13,10 @@ const mockUsers = [
     rating: 4.8,
     reviewsCount: 12,
     skillsCount: 3,
-    about: "Преподаю игру на гитаре, люблю музыку и практический подход к обучению.",
+    about: "Преподаю игру на гитаре, люблю музику и практический подход к обучению.",
+    email: "alexey.music@example.com",
+    phone: "+7 (999) 123-45-67",
+    telegram: "@alexey_music",
   },
   {
     id: "4",
@@ -24,6 +27,9 @@ const mockUsers = [
     reviewsCount: 24,
     skillsCount: 5,
     about: "Учу готовить вкусно и просто, люблю домашнюю кухню и суши.",
+    email: "maria.cook@example.com",
+    phone: "+7 (999) 234-56-78",
+    telegram: "@maria_cook",
   },
   {
     id: "5",
@@ -34,6 +40,9 @@ const mockUsers = [
     reviewsCount: 18,
     skillsCount: 4,
     about: "Занимаюсь программированием и помогаю новичкам начать путь в IT.",
+    email: "dmitry.dev@example.com",
+    phone: "+7 (999) 345-67-89",
+    telegram: "@dmitry_dev",
   },
 ];
 
@@ -44,11 +53,36 @@ export default function UserProfile({ userId }: Props) {
     return (
       <main className="page">
         <div className="container">
-          <div className="card">
-            <h1 className="title">Профиль пользователя</h1>
-            <p className="text-muted">Пользователь не найден.</p>
-            <Link href="/home" className="btn btn-primary">
-              На главную
+          <div
+            className="card"
+            style={{
+              padding: "32px",
+              borderRadius: "24px",
+              background: "var(--color-bg-secondary)",
+              border: "1px solid var(--color-border)",
+              textAlign: "center",
+            }}
+          >
+            <h1
+              style={{
+                margin: "0 0 10px",
+                fontSize: "28px",
+                fontWeight: 700,
+                color: "var(--color-text-primary)",
+              }}
+            >
+              Профиль не найден
+            </h1>
+            <p
+              style={{
+                margin: "0 0 20px",
+                color: "var(--color-text-secondary)",
+              }}
+            >
+              Такого пользователя не существует.
+            </p>
+            <Link href="/search" className="btn btn-primary">
+              Вернуться на поиск
             </Link>
           </div>
         </div>
@@ -58,46 +92,282 @@ export default function UserProfile({ userId }: Props) {
 
   return (
     <main className="page">
-      <div className="container" style={{ maxWidth: 760 }}>
-        <div className="card">
-          <h1 className="title">{user.username}</h1>
-          <p className="text-muted" style={{ marginBottom: 20 }}>
-            Публичный профиль исполнителя
-          </p>
-
-          <div className="grid grid-2">
-            <div className="card" style={{ background: "#f9fafb" }}>
-              <h2 className="subtitle">О пользователе</h2>
-              <p>
-                <b>ID:</b> {user.id}
-              </p>
-              <p>
-                <b>Роль:</b> {user.role}
-              </p>
-              <p>{user.about}</p>
+      <div
+        className="container"
+        style={{
+          maxWidth: "1080px",
+          display: "grid",
+          gap: "20px",
+        }}
+      >
+        {/* Главная карточка профиля */}
+        <section
+          className="card"
+          style={{
+            padding: "28px",
+            borderRadius: "28px",
+            background: "var(--color-bg-secondary)",
+            border: "1px solid var(--color-border)",
+            boxShadow: "0 10px 30px rgba(0,0,0,0.18)",
+          }}
+        >
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "140px 1fr",
+              gap: "24px",
+              alignItems: "center",
+            }}
+          >
+            {/* Аватар */}
+            <div
+              style={{
+                width: "120px",
+                height: "120px",
+                borderRadius: "50%",
+                overflow: "hidden",
+                background: "var(--color-bg-tertiary)",
+                border: "2px solid rgba(255,255,255,0.08)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <div
+                style={{
+                  color: "var(--color-primary)",
+                  opacity: 0.9,
+                }}
+              >
+                <svg
+                  width="52"
+                  height="52"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.7"
+                >
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                  <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+              </div>
             </div>
 
-            <div className="card" style={{ background: "#f9fafb" }}>
-              <h2 className="subtitle">Статистика</h2>
-              <p>
-                <b>Рейтинг:</b> {user.rating}
-              </p>
-              <p>
-                <b>Отзывы:</b> {user.reviewsCount}
-              </p>
-              <p>
-                <b>Навыков:</b> {user.skillsCount}
-              </p>
+            {/* Инфо */}
+            <div>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  gap: "16px",
+                  alignItems: "flex-start",
+                  flexWrap: "wrap",
+                  marginBottom: "22px",
+                }}
+              >
+                <div>
+                  <h1
+                    style={{
+                      margin: 0,
+                      fontSize: "32px",
+                      fontWeight: 750,
+                      color: "var(--color-text-primary)",
+                      lineHeight: 1.1,
+                    }}
+                  >
+                    {user.username}
+                  </h1>
+
+                  <div
+                    style={{
+                      marginTop: "10px",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "8px",
+                      color: "#4ade80",
+                      fontSize: "14px",
+                      fontWeight: 600,
+                    }}
+                  >
+                    <span
+                      style={{
+                        width: "8px",
+                        height: "8px",
+                        borderRadius: "50%",
+                        background: "#4ade80",
+                        display: "inline-block",
+                      }}
+                    />
+                    Исполнитель
+                  </div>
+                </div>
+              </div>
+
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+                  gap: "14px",
+                }}
+              >
+                <StatCard value={user.rating ?? 0} label="Рейтинг" />
+                <StatCard value={user.skillsCount ?? 0} label="Навыков" />
+                <StatCard value={user.reviewsCount ?? 0} label="Отзывов" />
+              </div>
             </div>
           </div>
+        </section>
 
-          <div style={{ marginTop: 20 }}>
-            <Link href="/search" className="btn btn-secondary">
-              Назад к поиску
-            </Link>
-          </div>
+        {/* Нижние блоки */}
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1.2fr 0.8fr",
+            gap: "20px",
+          }}
+        >
+          {/* О себе */}
+          <section
+            className="card"
+            style={{
+              padding: "24px",
+              borderRadius: "24px",
+              background: "var(--color-bg-secondary)",
+              border: "1px solid var(--color-border)",
+            }}
+          >
+            <h2
+              style={{
+                margin: "0 0 16px",
+                fontSize: "18px",
+                fontWeight: 700,
+                color: "var(--color-text-primary)",
+              }}
+            >
+              О себе
+            </h2>
+            <p
+              style={{
+                margin: 0,
+                fontSize: "14px",
+                color: "var(--color-text-secondary)",
+                lineHeight: "1.6",
+              }}
+            >
+              {user.about}
+            </p>
+          </section>
+
+          {/* Контакты */}
+          <section
+            className="card"
+            style={{
+              padding: "24px",
+              borderRadius: "24px",
+              background: "#f0fdf4",
+              border: "2px solid #22c55e",
+            }}
+          >
+            <h2
+              style={{
+                margin: "0 0 16px",
+                fontSize: "18px",
+                fontWeight: 700,
+                color: "#16a34a",
+              }}
+            >
+              📋 Контакты
+            </h2>
+            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+              <div>
+                <p style={{ margin: "0 0 4px", fontSize: "12px", color: "#16a34a", fontWeight: 600 }}>
+                  EMAIL
+                </p>
+                <a
+                  href={`mailto:${user.email}`}
+                  style={{
+                    color: "var(--color-primary)",
+                    textDecoration: "none",
+                    fontWeight: 500,
+                    fontSize: "14px",
+                  }}
+                >
+                  {user.email}
+                </a>
+              </div>
+              <div>
+                <p style={{ margin: "0 0 4px", fontSize: "12px", color: "#16a34a", fontWeight: 600 }}>
+                  ТЕЛЕФОН
+                </p>
+                <a
+                  href={`tel:${user.phone}`}
+                  style={{
+                    color: "var(--color-primary)",
+                    textDecoration: "none",
+                    fontWeight: 500,
+                    fontSize: "14px",
+                  }}
+                >
+                  {user.phone}
+                </a>
+              </div>
+              <div>
+                <p style={{ margin: "0 0 4px", fontSize: "12px", color: "#16a34a", fontWeight: 600 }}>
+                  TELEGRAM
+                </p>
+                <a
+                  href={`https://t.me/${user.telegram?.replace("@", "")}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    color: "var(--color-primary)",
+                    textDecoration: "none",
+                    fontWeight: 500,
+                    fontSize: "14px",
+                  }}
+                >
+                  {user.telegram}
+                </a>
+              </div>
+            </div>
+          </section>
         </div>
       </div>
     </main>
+  );
+}
+
+function StatCard({ value, label }: { value: number; label: string }) {
+  return (
+    <div
+      style={{
+        padding: "12px",
+        borderRadius: "12px",
+        background: "rgba(255,255,255,0.05)",
+        textAlign: "center",
+        border: "1px solid var(--color-border)",
+      }}
+    >
+      <p
+        style={{
+          margin: "0 0 4px",
+          fontSize: "20px",
+          fontWeight: 700,
+          color: "var(--color-primary)",
+        }}
+      >
+        {value}
+      </p>
+      <p
+        style={{
+          margin: 0,
+          fontSize: "12px",
+          color: "var(--color-text-secondary)",
+          fontWeight: 500,
+        }}
+      >
+        {label}
+      </p>
+    </div>
   );
 }

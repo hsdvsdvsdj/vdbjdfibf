@@ -7,6 +7,7 @@ import {
   useState,
   ReactNode,
 } from "react";
+import { api } from "../services/api";
 
 export type UserRole = "user" | "moderator";
 
@@ -16,6 +17,7 @@ export interface User {
   role: UserRole;
   balance: number;
   avatar?: string;
+  bio?: string;
   rating?: number;
   reviewsCount?: number;
   skillsCount?: number;
@@ -28,9 +30,9 @@ interface StoredUser extends User {
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
-  login: (username: string, password: string) => boolean;
-  register: (username: string, password: string) => boolean;
-  logout: () => void;
+  login: (username: string, password: string) => Promise<boolean>;
+  register: (username: string, password: string) => Promise<boolean>;
+  logout: () => Promise<void>;
   updateBalance: (amount: number) => void;
 }
 
@@ -44,6 +46,7 @@ const initialUsers: StoredUser[] = [
     role: "user",
     balance: 5000,
     avatar: "",
+    bio: "",
     rating: 4.8,
     reviewsCount: 12,
     skillsCount: 3,
@@ -55,6 +58,7 @@ const initialUsers: StoredUser[] = [
     role: "moderator",
     balance: 0,
     avatar: "",
+    bio: "",
     rating: 5,
     reviewsCount: 0,
     skillsCount: 0,
@@ -93,15 +97,53 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
-    const savedUser = localStorage.getItem("currentUser");
-    if (savedUser) {
+    const init = async () => {
       try {
-        setUser(JSON.parse(savedUser) as User);
-      } catch {
-        localStorage.removeItem("currentUser");
+        // Переинициализируем токен из localStorage в ApiClient
+        api.reloadToken();
+
+        // Сначала проверяем localStorage на сохраненный access_token
+        const savedToken = localStorage.getItem("access_token");
+        if (savedToken) {
+          // Устанавливаем токен в ApiClient и пытаемся загрузить пользователя
+          try {
+            const response = await api.getCurrentUser();
+            if (response) {
+              setUser(response);
+              setHydrated(true);
+              return;
+            }
+          } catch (userLoadError) {
+            console.log("access_token истек, попытаемся обновить через refresh_token");
+          }
+        }
+
+        // Если access_token недействителен или не существует, пытаемся обновить через refresh_token
+        try {
+          const refreshResponse = await api.refreshToken();
+          if (refreshResponse && refreshResponse.access_token) {
+            // Получаем информацию о пользователе с новым токеном
+            const currentUser = await api.getCurrentUser();
+            if (currentUser) {
+              setUser(currentUser);
+              setHydrated(true);
+              return;
+            }
+          }
+        } catch (refreshError) {
+          // refresh_token тоже невалиден или истек
+          console.log("refresh_token невалиден или истек");
+          localStorage.removeItem("access_token");
+        }
+      } catch (error) {
+        console.log("Autoload failed, need to login", error);
+        localStorage.removeItem("access_token");
       }
-    }
-    setHydrated(true);
+
+      setHydrated(true);
+    };
+
+    init();
   }, []);
 
   useEffect(() => {
@@ -114,47 +156,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [user, hydrated]);
 
-  const login = (username: string, password: string) => {
-    const users = getSavedUsers();
-    const foundUser = users.find(
-      (u) => u.username === username && u.password === password
-    );
+  const login = async (username: string, password: string) => {
+    try {
+      await api.login(username, password);
 
-    if (!foundUser) return false;
+      const currentUser = await api.getCurrentUser();
+      setUser(currentUser);
 
-    setUser(stripPassword(foundUser));
-    return true;
+      return true;
+    } catch (error) {
+      console.error("Login failed", error);
+      return false;
+    }
   };
 
-  const register = (username: string, password: string) => {
-    const users = getSavedUsers();
+  const register = async (username: string, password: string) => {
+    try {
+      await api.register({ login: username, password });
 
-    const exists = users.some(
-      (u) => u.username.toLowerCase() === username.toLowerCase()
-    );
+      const currentUser = await api.getCurrentUser();
+      setUser(currentUser);
 
-    if (exists) return false;
-
-    const newUser: StoredUser = {
-      id: Date.now().toString(),
-      username,
-      password,
-      role: "user",
-      balance: 1000,
-      avatar: "",
-      rating: 0,
-      reviewsCount: 0,
-      skillsCount: 0,
-    };
-
-    const updatedUsers = [...users, newUser];
-    saveUsers(updatedUsers);
-    setUser(stripPassword(newUser));
-    return true;
+      return true;
+    } catch (error) {
+      console.error("Register failed", error);
+      return false;
+    }
   };
 
-  const logout = () => {
-    setUser(null);
+  const logout = async () => {
+    try {
+      await api.logout();
+    } catch (error) {
+      console.error("Logout failed", error);
+    } finally {
+      setUser(null);
+    }
   };
 
   const updateBalance = (amount: number) => {

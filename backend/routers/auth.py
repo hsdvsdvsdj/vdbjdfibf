@@ -58,24 +58,21 @@ async def register_user(
     response: Response,
     session: AsyncSession = Depends(DatabaseInteraction.get_async_session)
 ):
-    existing_user = await get_user_by_login_or_email(
+    existing_user = await get_user_by_login(
         session=session,
-        login=user_data.login,
-        email=user_data.email
+        login=user_data.login
     )
 
     if existing_user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Пользователь с таким login или email уже существует"
+            detail="Пользователь с таким login уже существует"
         )
 
     user = await create_user(
         session=session,
         login=user_data.login,
-        hashed_password=hash_password(user_data.password),
-        email=user_data.email,
-        nickname=user_data.nickname,
+        hashed_password=hash_password(user_data.password)
     )
 
     access_token = create_access_token({
@@ -145,21 +142,24 @@ async def refresh_access_token(
     response: Response,
     session: AsyncSession = Depends(DatabaseInteraction.get_async_session)
 ):
+    # Получение refresh token из cookies
     refresh_token = request.cookies.get(settings.REFRESH_COOKIE_NAME)
 
     if not refresh_token:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Refresh token отсутствует"
+            detail="Refresh token отсутствует в cookies"
         )
 
+    # Проверка: токен из cookies должен совпадать с токеном в БД
     db_token = await get_refresh_token(session, refresh_token)
     if not db_token:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Refresh token не найден"
+            detail="Refresh token не найден в БД или был удален"
         )
 
+    # Проверка срока истечения refresh token
     if db_token.expires_at.replace(tzinfo=timezone.utc) < datetime.now(timezone.utc):
         await delete_refresh_token(session, refresh_token)
         clear_refresh_cookie(response)
@@ -168,6 +168,7 @@ async def refresh_access_token(
             detail="Refresh token истек"
         )
 
+    # Декодирование и валидация JWT
     try:
         payload = decode_token(refresh_token)
         token_type = payload.get("type")
@@ -176,15 +177,23 @@ async def refresh_access_token(
         if token_type != "refresh" or not user_id:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Неверный refresh token"
+                detail="Неверный тип refresh token или отсутствует user_id"
             )
 
     except JWTError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Невалидный refresh token"
+            detail="Невалидный refresh token (декодирование ошибка)"
         )
 
+    # Проверка: user_id из token должен совпадать с user_id из БД
+    if db_token.user_id != int(user_id):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="user_id в токене не совпадает с user_id в БД"
+        )
+
+    # Получение пользователя
     user = await get_user_by_id(session, int(user_id))
     if not user:
         raise HTTPException(
@@ -192,6 +201,7 @@ async def refresh_access_token(
             detail="Пользователь не найден"
         )
 
+    # Создание нового access token
     new_access_token = create_access_token({
         "sub": str(user.id),
         "login": user.login
@@ -219,3 +229,84 @@ async def logout_user(
 @router.get("/me", response_model=UserResponseSchema)
 async def get_me(current_user: User = Depends(get_current_user)):
     return current_user
+
+
+@router.post("/verify-refresh-token")
+async def verify_refresh_token(
+    request: Request,
+    session: AsyncSession = Depends(DatabaseInteraction.get_async_session)
+):
+    """
+    Проверяет refresh token из cookies.
+    Если токен валиден и совпадает с БД, возвращает информацию о пользователе и статус True.
+    Если токен невалиден или истек, возвращает статус False.
+    """
+    refresh_token = request.cookies.get(settings.REFRESH_COOKIE_NAME)
+
+    if not refresh_token:
+        return {
+            "is_valid": False,
+            "detail": "Refresh token отсутствует в cookies"
+        }
+
+    # Проверка: токен из cookies должен совпадать с токеном в БД
+    db_token = await get_refresh_token(session, refresh_token)
+    if not db_token:
+        return {
+            "is_valid": False,
+            "detail": "Refresh token не найден в БД"
+        }
+
+    # Проверка срока истечения
+    if db_token.expires_at.replace(tzinfo=timezone.utc) < datetime.now(timezone.utc):
+        await delete_refresh_token(session, refresh_token)
+        return {
+            "is_valid": False,
+            "detail": "Refresh token истек"
+        }
+
+    # Декодирование JWT
+    try:
+        payload = decode_token(refresh_token)
+        token_type = payload.get("type")
+        user_id = payload.get("sub")
+
+        if token_type != "refresh" or not user_id:
+            return {
+                "is_valid": False,
+                "detail": "Неверный тип токена или отсутствует user_id"
+            }
+
+        # Проверка: user_id в токене должен совпадать с user_id в БД
+        if db_token.user_id != int(user_id):
+            return {
+                "is_valid": False,
+                "detail": "user_id в токене не совпадает с user_id в БД"
+            }
+
+    except JWTError:
+        return {
+            "is_valid": False,
+            "detail": "Невалидный refresh token (ошибка декодирования)"
+        }
+
+    # Получение пользователя
+    user = await get_user_by_id(session, int(user_id))
+    if not user:
+        return {
+            "is_valid": False,
+            "detail": "Пользователь не найден"
+        }
+
+    return {
+        "is_valid": True,
+        "detail": "Refresh token валиден",
+        "user": {
+            "id": user.id,
+            "login": user.login,
+            "email": user.email,
+            "nickname": user.nickname,
+            "photo": user.photo,
+            "is_verified": user.is_verified
+        }
+    }
