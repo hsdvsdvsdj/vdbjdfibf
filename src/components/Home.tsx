@@ -1,7 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
+import { SkeletonGrid } from "./Skeleton";
 
 interface Skill {
   id: string;
@@ -98,33 +101,56 @@ const mockSkills: Skill[] = [
 ];
 
 export default function Home() {
+  const router = useRouter();
   const { user } = useAuth();
+  const [isLoading, setIsLoading] = useState(true);
+
+  const handleSkillClick = (skillId: string) => {
+    router.push(`/skill/${skillId}`);
+  };
+
+  useEffect(() => {
+    const timer = setTimeout(() => setIsLoading(false), 1000);
+    return () => clearTimeout(timer);
+  }, []);
 
   return (
     <main className="page">
       <div className="container">
-        <div className="card" style={{ marginBottom: 24 }}>
-          <h1 className="title" style={{ marginBottom: 8 }}>
+        <div className="card" style={{ marginBottom: 32 }}>
+          <h1 className="title" style={{ marginBottom: 8, margin: 0 }}>
             Добро пожаловать, {user?.username || "пользователь"}!
           </h1>
-          <p className="text-muted" style={{ marginBottom: 20 }}>
+          <p className="text-secondary" style={{ marginBottom: 24, fontSize: "14px" }}>
             Найди полезные навыки для изучения или предложи свои услуги другим.
           </p>
 
           <div className="grid grid-3">
-            <Link href="/create-skill" className="card">
-              <h3 className="subtitle">Создать навык</h3>
-              <p className="text-muted">Добавь свой навык и начни получать заказы.</p>
+            <Link href="/create-skill">
+              <div className="card" style={{ display: "block", textDecoration: "none", cursor: "pointer" }}>
+                <h3 className="subtitle">Создать навык</h3>
+                <p className="text-secondary" style={{ fontSize: "13px", margin: 0 }}>
+                  Добавь свой навык и начни получать заказы.
+                </p>
+              </div>
             </Link>
 
-            <Link href="/orders" className="card">
-              <h3 className="subtitle">Мои заказы</h3>
-              <p className="text-muted">Просматривай активные и завершенные заказы.</p>
+            <Link href="/orders">
+              <div className="card" style={{ display: "block", textDecoration: "none", cursor: "pointer" }}>
+                <h3 className="subtitle">Мои заказы</h3>
+                <p className="text-secondary" style={{ fontSize: "13px", margin: 0 }}>
+                  Просматривай активные и завершенные заказы.
+                </p>
+              </div>
             </Link>
 
-            <Link href="/reviews" className="card">
-              <h3 className="subtitle">Отзывы</h3>
-              <p className="text-muted">Следи за оценками и мнением пользователей.</p>
+            <Link href="/reviews">
+              <div className="card" style={{ display: "block", textDecoration: "none", cursor: "pointer" }}>
+                <h3 className="subtitle">Отзывы</h3>
+                <p className="text-secondary" style={{ fontSize: "13px", margin: 0 }}>
+                  Следи за оценками и мнением пользователей.
+                </p>
+              </div>
             </Link>
           </div>
         </div>
@@ -136,70 +162,94 @@ export default function Home() {
             alignItems: "center",
             gap: 12,
             flexWrap: "wrap",
-            marginBottom: 16,
+            marginBottom: 24,
           }}
         >
           <h2 className="title" style={{ margin: 0 }}>
             Популярные навыки
           </h2>
 
-          <Link href="/search" className="btn btn-secondary">
+          <Link href="/search" className="btn btn-primary">
             Смотреть все
           </Link>
         </div>
 
-        <div className="grid grid-3">
-          {mockSkills.map((skill) => (
-            <Link
-              key={skill.id}
-              href={`/skill/${skill.id}`}
-              className="card"
-              style={{ display: "block" }}
-            >
+        {isLoading ? (
+          <SkeletonGrid columns={3} count={6} />
+        ) : (
+          <div className="grid grid-3">
+            {mockSkills.map((skill) => (
               <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "start",
-                  gap: 8,
-                  marginBottom: 12,
-                }}
+                key={skill.id}
+                className="card"
+                style={{ display: "block", height: "100%", cursor: "pointer" }}
+                onClick={() => handleSkillClick(skill.id)}
               >
-                <span className="badge">{skill.category}</span>
-                <span className="text-muted">⭐ {skill.rating}</span>
-              </div>
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      gap: 8,
+                      marginBottom: 12,
+                    }}
+                  >
+                    <span
+                      style={{
+                        background: "var(--color-bg-secondary)",
+                        color: "var(--color-text-secondary)",
+                        padding: "4px 8px",
+                        borderRadius: "4px",
+                        fontSize: "11px",
+                        fontWeight: "500",
+                      }}
+                    >
+                      {skill.category}
+                    </span>
+                    <span style={{ fontSize: "14px", fontWeight: "500" }}>
+                      ⭐ {skill.rating}
+                    </span>
+                  </div>
 
-              <h3 className="subtitle">{skill.title}</h3>
-              <p className="text-muted">{skill.description}</p>
+                  <h3 className="subtitle">{skill.title}</h3>
+                  <p className="text-secondary" style={{ fontSize: "13px", margin: "8px 0" }}>
+                    {skill.description}
+                  </p>
 
-              <div style={{ marginTop: 16 }}>
-                <p style={{ margin: "0 0 6px" }}>
-                  <b>Исполнитель:</b> {skill.instructor}
-                </p>
-                <p style={{ margin: "0 0 6px" }}>
-                  <b>Длительность:</b> {skill.duration} мин
-                </p>
-                <p style={{ margin: 0 }}>
-                  <b>Отзывы:</b> {skill.reviewsCount}
-                </p>
-              </div>
+                  <div
+                    style={{
+                      borderTop: "1px solid var(--color-border)",
+                      paddingTop: "12px",
+                      marginTop: "12px",
+                      fontSize: "13px",
+                    }}
+                  >
+                    <p style={{ margin: "0 0 6px", color: "var(--color-text-secondary)" }}>
+                      {skill.instructor}
+                    </p>
+                    <p style={{ margin: "0 0 6px", color: "var(--color-text-secondary)" }}>
+                      {skill.duration} мин
+                    </p>
+                    <p style={{ margin: 0, color: "var(--color-text-secondary)" }}>
+                      {skill.reviewsCount} отзывов
+                    </p>
+                  </div>
 
-              <div
-                style={{
-                  marginTop: 16,
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                }}
-              >
-                <span style={{ fontSize: 22, fontWeight: 700 }}>
-                  {skill.price} ₽
-                </span>
-                <span className="btn btn-primary">Подробнее</span>
+                  <div
+                    style={{
+                      marginTop: 12,
+                      borderTop: "1px solid var(--color-border)",
+                      paddingTop: "12px",
+                    }}
+                  >
+                    <span style={{ fontSize: "12px", fontWeight: "500", color: "var(--color-primary)" }}>
+                      Подробнее →
+                    </span>
+                  </div>
               </div>
-            </Link>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
     </main>
   );

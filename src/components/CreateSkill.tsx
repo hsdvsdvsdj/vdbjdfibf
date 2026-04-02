@@ -8,7 +8,6 @@ export default function CreateSkill() {
 
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState("");
-  const [price, setPrice] = useState("");
   const [duration, setDuration] = useState("");
   const [description, setDescription] = useState("");
   const [error, setError] = useState("");
@@ -20,7 +19,6 @@ export default function CreateSkill() {
     if (
       !title.trim() ||
       !category.trim() ||
-      !price.trim() ||
       !duration.trim() ||
       !description.trim()
     ) {
@@ -34,62 +32,110 @@ export default function CreateSkill() {
 
   return (
     <main className="page">
-      <div className="container" style={{ maxWidth: 760 }}>
-        <div className="card">
-          <h1 className="title">Создать навык</h1>
+      <div className="container" style={{ maxWidth: 700 }}>
+        <div className="card" style={{
+          padding: "40px",
+          background: "linear-gradient(135deg, var(--color-bg-secondary) 0%, var(--color-bg-tertiary) 100%)"
+        }}>
+          <h1 className="title" style={{ marginBottom: "8px" }}>Создать новый навык</h1>
+          <p style={{ color: "var(--color-text-secondary)", marginBottom: "32px", fontSize: "14px" }}>
+            Поделись своими знаниями с другими пользователями
+          </p>
 
-          <form className="form" onSubmit={handleSubmit}>
-            <input
-              className="input"
-              type="text"
-              placeholder="Название навыка"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-            />
+          <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+            {/* Название */}
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+              <label style={{ fontWeight: "600", fontSize: "14px", color: "var(--color-text-primary)" }}>
+                Название навыка
+              </label>
+              <input
+                className="input"
+                type="text"
+                placeholder="Например: Обучение веб-дизайну"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+              />
+            </div>
 
-            <input
-              className="input"
-              type="text"
-              placeholder="Категория"
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-            />
+            {/* Категория */}
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+              <label style={{ fontWeight: "600", fontSize: "14px", color: "var(--color-text-primary)" }}>
+                Категория
+              </label>
+              <input
+                className="input"
+                type="text"
+                placeholder="Например: Дизайн, Программирование, Языки"
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+              />
+            </div>
 
-            <input
-              className="input"
-              type="number"
-              placeholder="Цена"
-              value={price}
-              onChange={(e) => setPrice(e.target.value)}
-            />
+            {/* Длительность */}
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+              <label style={{ fontWeight: "600", fontSize: "14px", color: "var(--color-text-primary)" }}>
+                Длительность (минут)
+              </label>
+              <input
+                className="input"
+                type="number"
+                placeholder="60"
+                value={duration}
+                onChange={(e) => setDuration(e.target.value)}
+              />
+            </div>
 
-            <input
-              className="input"
-              type="number"
-              placeholder="Длительность в минутах"
-              value={duration}
-              onChange={(e) => setDuration(e.target.value)}
-            />
+            {/* Описание */}
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+              <label style={{ fontWeight: "600", fontSize: "14px", color: "var(--color-text-primary)" }}>
+                Описание навыка
+              </label>
+              <textarea
+                className="input"
+                placeholder="Опиши подробно что ты можешь преподать..."
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                rows={5}
+              />
+            </div>
 
-            <textarea
-              className="input"
-              placeholder="Описание навыка"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              rows={6}
-            />
+            {/* Ошибка */}
+            {error && (
+              <div style={{
+                background: "#ffebee",
+                color: "#c62828",
+                padding: "12px 16px",
+                borderRadius: "8px",
+                fontSize: "13px",
+                borderLeft: "3px solid #c62828"
+              }}>
+                {error}
+              </div>
+            )}
 
-            {error ? <p style={{ color: "crimson", margin: 0 }}>{error}</p> : null}
-
-            <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-              <button className="btn btn-primary" type="submit">
-                Создать
-              </button>
-
+            {/* Кнопки */}
+            <div style={{ display: "flex", gap: "12px", flexWrap: "wrap", marginTop: "8px" }}>
               <button
-                className="btn btn-secondary"
+                className="btn btn-primary"
+                type="submit"
+                style={{ padding: "12px 24px", fontSize: "14px", flex: 1, minWidth: "140px" }}
+              >
+                Создать навык
+              </button>
+              <button
+                className="btn"
                 type="button"
                 onClick={() => router.push("/home")}
+                style={{
+                  padding: "12px 24px",
+                  fontSize: "14px",
+                  background: "var(--color-bg-secondary)",
+                  color: "var(--color-text-secondary)",
+                  border: "1px solid var(--color-border)",
+                  cursor: "pointer",
+                  flex: 1,
+                  minWidth: "140px"
+                }}
               >
                 Отмена
               </button>
