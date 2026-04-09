@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/context/AuthContext";
 
 const CATEGORIES = [
   "Дизайн",
@@ -19,14 +20,18 @@ const CATEGORIES = [
 
 export default function CreateSkill() {
   const router = useRouter();
+  const { createSkill: createSkillInContext } = useAuth();
 
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState("");
   const [duration, setDuration] = useState("");
+  const [price, setPrice] = useState("");
   const [description, setDescription] = useState("");
+  const [learnings, setLearnings] = useState("");
   const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError("");
 
@@ -34,14 +39,49 @@ export default function CreateSkill() {
       !title.trim() ||
       !category.trim() ||
       !duration.trim() ||
+      !price.trim() ||
       !description.trim()
     ) {
       setError("Заполни все поля");
       return;
     }
 
-    alert("Навык успешно создан");
-    router.push("/home");
+    const durationNum = parseInt(duration, 10);
+    const priceNum = parseInt(price, 10);
+
+    if (isNaN(durationNum) || durationNum < 1 || durationNum > 180) {
+      setError("Длительность должна быть от 1 до 180 минут");
+      return;
+    }
+
+    if (isNaN(priceNum) || priceNum < 100 || priceNum > 50000) {
+      setError("Цена должна быть от 100 до 50000 ₽");
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+
+      const learningsList = learnings
+        .split("\n")
+        .map((l) => l.trim())
+        .filter((l) => l.length > 0);
+
+      const skillId = await createSkillInContext({
+        title: title.trim(),
+        description: description.trim(),
+        category: category.trim(),
+        duration: durationNum,
+        price: priceNum,
+        learnings: learningsList.length > 0 ? learningsList : ["Основные навыки"],
+      });
+
+      setIsLoading(false);
+      router.push(`/skill/${skillId}`);
+    } catch (err) {
+      setError("Ошибка при создании навыка: " + (err instanceof Error ? err.message : ""));
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -122,6 +162,23 @@ export default function CreateSkill() {
               />
             </div>
 
+            {/* Цена */}
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+              <label style={{ fontWeight: "600", fontSize: "14px", color: "var(--color-text-primary)" }}>
+                Цена (₽)
+              </label>
+              <input
+                className="input"
+                type="number"
+                placeholder="500"
+                min="100"
+                max="50000"
+                value={price}
+                onChange={(e) => setPrice(e.target.value)}
+              />
+            </div>
+
+            {/* 
             {/* Описание */}
             <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
               <label style={{ fontWeight: "600", fontSize: "14px", color: "var(--color-text-primary)" }}>
@@ -133,6 +190,24 @@ export default function CreateSkill() {
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 rows={5}
+                style={{
+                  resize: "none",
+                  fontFamily: "inherit"
+                }}
+              />
+            </div>
+
+            {/* Чему научится ученик */}
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+              <label style={{ fontWeight: "600", fontSize: "14px", color: "var(--color-text-primary)" }}>
+                Чему научится ученик (по одному пункту на строку)
+              </label>
+              <textarea
+                className="input"
+                placeholder={`Базовые аккорды\nТехника игры\nПопулярные песни`}
+                value={learnings}
+                onChange={(e) => setLearnings(e.target.value)}
+                rows={3}
                 style={{
                   resize: "none",
                   fontFamily: "inherit"
@@ -159,14 +234,16 @@ export default function CreateSkill() {
               <button
                 className="btn btn-primary"
                 type="submit"
-                style={{ padding: "12px 24px", fontSize: "14px", flex: 1, minWidth: "140px" }}
+                disabled={isLoading}
+                style={{ padding: "12px 24px", fontSize: "14px", flex: 1, minWidth: "140px", opacity: isLoading ? 0.6 : 1 }}
               >
-                Создать навык
+                {isLoading ? "Создание..." : "Создать навык"}
               </button>
               <button
                 className="btn"
                 type="button"
                 onClick={() => router.push("/home")}
+                disabled={isLoading}
                 style={{
                   padding: "12px 24px",
                   fontSize: "14px",
@@ -175,7 +252,8 @@ export default function CreateSkill() {
                   border: "1px solid var(--color-border)",
                   cursor: "pointer",
                   flex: 1,
-                  minWidth: "140px"
+                  minWidth: "140px",
+                  opacity: isLoading ? 0.6 : 1
                 }}
               >
                 Отмена

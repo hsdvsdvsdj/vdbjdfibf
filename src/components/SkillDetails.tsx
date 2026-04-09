@@ -6,150 +6,27 @@ import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import { SkeletonText, SkeletonCard } from "./Skeleton";
 
-interface Skill {
-  id: string;
-  title: string;
-  description: string;
-  fullDescription: string;
-  duration: number;
-  instructor: string;
-  instructorId: string;
-  rating: number;
-  category: string;
-  reviewsCount: number;
-}
-
 interface Props {
   skillId: string;
 }
 
-const mockSkills: Record<string, Skill> = {
-  "1": {
-    id: "1",
-    title: "Основы игры на гитаре",
-    description:
-      "Научу базовым аккордам и технике игры на акустической гитаре.",
-    fullDescription:
-      "На занятии разберем правильную постановку рук, базовые аккорды, простые бои и переходы между аккордами. В конце вы сможете сыграть первую простую песню.",
-    duration: 30,
-    instructor: "Алексей М.",
-    instructorId: "3",
-    rating: 4.8,
-    category: "Музыка",
-    reviewsCount: 12,
-  },
-  "2": {
-    id: "2",
-    title: "Приготовление суши",
-    description:
-      "Покажу, как правильно готовить роллы и суши в домашних условиях.",
-    fullDescription:
-      "Научу варить рис для суши, выбирать ингредиенты, крутить роллы и красиво подавать готовое блюдо. Разберем популярные варианты и частые ошибки.",
-    duration: 45,
-    instructor: "Мария К.",
-    instructorId: "4",
-    rating: 4.9,
-    category: "Кулинария",
-    reviewsCount: 24,
-  },
-  "3": {
-    id: "3",
-    title: "Python для начинающих",
-    description:
-      "Основы программирования на Python: переменные, циклы, функции.",
-    fullDescription:
-      "Разберем базовый синтаксис Python, условные операторы, циклы, функции и практические примеры. Подходит тем, кто хочет начать изучение программирования с нуля.",
-    duration: 60,
-    instructor: "Дмитрий С.",
-    instructorId: "5",
-    rating: 4.7,
-    category: "IT",
-    reviewsCount: 18,
-  },
-  "4": {
-    id: "4",
-    title: "Йога для начинающих",
-    description:
-      "Базовые асаны и правильное дыхание для улучшения формы и самочувствия.",
-    fullDescription:
-      "Научу основным асанам, правильному дыханию и расслаблению. Занятие подходит для всех уровней подготовки. Вы улучшите гибкость, избавитесь от стресса и почувствуете легкость в теле.",
-    duration: 40,
-    instructor: "Елена В.",
-    instructorId: "6",
-    rating: 4.6,
-    category: "Здоровье",
-    reviewsCount: 15,
-  },
-  "5": {
-    id: "5",
-    title: "Рисование акварелью",
-    description:
-      "Техники работы с акварелью, создание пейзажей и смешивание цветов.",
-    fullDescription:
-      "Научу основным техникам работы с акварелью, правильному смешиванию цветов, созданию пейзажей и натюрмортов. Вы научитесь видеть свет, тень и глубину в рисунке.",
-    duration: 50,
-    instructor: "Ольга Н.",
-    instructorId: "7",
-    rating: 4.8,
-    category: "Искусство",
-    reviewsCount: 21,
-  },
-  "6": {
-    id: "6",
-    title: "Разговорный английский",
-    description:
-      "Практика разговорного английского языка и повседневных ситуаций.",
-    fullDescription:
-      "Практикуем разговорный английский в реальных ситуациях: заказ в кафе, знакомство, работа, путешествия. Учимся естественно общаться и преодолевать языковой барьер.",
-    duration: 45,
-    instructor: "Иван Р.",
-    instructorId: "8",
-    rating: 4.9,
-    category: "Языки",
-    reviewsCount: 31,
-  },
-};
-
-const mockReviews = [
-  {
-    id: "1",
-    userId: "10",
-    userName: "Иван П.",
-    rating: 5,
-    comment: "Очень понравился урок, все понятно и по делу.",
-    date: "12.03.2026",
-  },
-  {
-    id: "2",
-    userId: "11",
-    userName: "Ольга С.",
-    rating: 5,
-    comment: "Хорошее объяснение, рекомендую.",
-    date: "09.03.2026",
-  },
-  {
-    id: "3",
-    userId: "12",
-    userName: "Петр К.",
-    rating: 4,
-    comment: "Все хорошо, но хотелось бы чуть больше практики.",
-    date: "05.03.2026",
-  },
-];
-
 export default function SkillDetails({ skillId }: Props) {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, skills, reviews, createOrder } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
+  const [showModal, setShowModal] = useState(false);
+  const [isOrdering, setIsOrdering] = useState(false);
+  const [error, setError] = useState("");
 
-  const skill = mockSkills[skillId];
+  const skill = skills.find((s) => s.id === skillId);
+  const skillReviews = reviews.filter((r) => r.skillId === skillId);
 
   useEffect(() => {
-    const timer = setTimeout(() => setIsLoading(false), 800);
+    const timer = setTimeout(() => setIsLoading(false), 500);
     return () => clearTimeout(timer);
   }, [skillId]);
 
-  if (!skill) {
+  if (!isLoading && !skill) {
     return (
       <main className="page">
         <div className="container">
@@ -165,13 +42,31 @@ export default function SkillDetails({ skillId }: Props) {
     );
   }
 
-  const handleOrder = () => {
+  const canOrder = user && String(user.id) !== skill?.authorId && (user?.balance || 0) >= (skill?.price || 0);
+
+  const handleOrder = async () => {
     if (!user) {
       router.push("/login");
       return;
     }
-    // Редиректим на профиль инструктора с его контактными данными
-    router.push(`/profile/${skill.instructorId}`);
+
+    if (!skill) return;
+
+    if ((user.balance || 0) < skill.price) {
+      setError("Недостаточно средств. Пополните баланс.");
+      return;
+    }
+
+    try {
+      setIsOrdering(true);
+      const orderId = await createOrder(skill.id, skill.authorId);
+      setIsOrdering(false);
+      setShowModal(false);
+      router.push(`/order/${orderId}/chat`);
+    } catch (err) {
+      setError("Ошибка при создании заказа: " + (err instanceof Error ? err.message : ""));
+      setIsOrdering(false);
+    }
   };
 
   return (
@@ -216,10 +111,10 @@ export default function SkillDetails({ skillId }: Props) {
                     display: "inline-block",
                   }}
                 >
-                  {skill.category}
+                  {skill?.category}
                 </span>
                 <h1 className="title" style={{ marginTop: 12 }}>
-                  {skill.title}
+                  {skill?.title}
                 </h1>
 
                 <div
@@ -231,75 +126,79 @@ export default function SkillDetails({ skillId }: Props) {
                 >
                   <p style={{ margin: "0 0 8px", fontSize: "13px" }}>
                     <b>Исполнитель:</b>{" "}
-                    <Link href={`/profile/${skill.instructorId}`} style={{ color: "var(--color-primary)" }}>
-                      {skill.instructor}
+                    <Link href={`/profile/${skill?.authorId}`} style={{ color: "var(--color-primary)" }}>
+                      {skill?.authorId}
                     </Link>
                   </p>
                   <p style={{ margin: "0 0 8px", fontSize: "13px" }}>
-                    <b>Длительность:</b> {skill.duration} мин
+                    <b>Длительность:</b> {skill?.duration} мин
                   </p>
                   <p style={{ margin: 0, fontSize: "13px" }}>
-                    <b>Рейтинг:</b> {skill.rating} ({skill.reviewsCount} отзывов)
+                    <b>Рейтинг:</b> {skill?.rating.toFixed(1)} ({skillReviews.length} отзывов)
                   </p>
                 </div>
 
                 <h2 className="subtitle">Описание</h2>
                 <p className="text-secondary" style={{ lineHeight: "1.6" }}>
-                  {skill.fullDescription}
+                  {skill?.description}
                 </p>
 
-                <h2 className="subtitle" style={{ marginTop: 24 }}>
-                  Что будет на занятии
-                </h2>
-                <ul style={{ paddingLeft: 20, margin: 0, color: "var(--color-text-secondary)", fontSize: "13px" }}>
-                  <li style={{ marginBottom: 8 }}>Практическое объяснение материала</li>
-                  <li style={{ marginBottom: 8 }}>Ответы на вопросы по теме</li>
-                  <li>Полезные советы для самостоятельной работы</li>
-                </ul>
+                {skill?.learnings && skill.learnings.length > 0 && (
+                  <>
+                    <h2 className="subtitle" style={{ marginTop: 24 }}>
+                      Чему вы научитесь
+                    </h2>
+                    <ul style={{ paddingLeft: 20, margin: 0, color: "var(--color-text-secondary)", fontSize: "13px" }}>
+                      {skill.learnings.map((item, idx) => (
+                        <li key={idx} style={{ marginBottom: 8 }}>{item}</li>
+                      ))}
+                    </ul>
+                  </>
+                )}
               </div>
 
-              <div className="card">
-                <h2 className="subtitle">Отзывы ({mockReviews.length})</h2>
+              {skillReviews.length > 0 && (
+                <div className="card">
+                  <h2 className="subtitle">Отзывы ({skillReviews.length})</h2>
 
-                <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                  {mockReviews.map((review) => (
-                    <div
-                      key={review.id}
-                      className="card"
-                      style={{
-                        background: "var(--color-bg-secondary)",
-                        border: "1px solid var(--color-border)",
-                      }}
-                    >
+                  <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                    {skillReviews.map((review) => (
                       <div
+                        key={review.id}
+                        className="card"
                         style={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          gap: 12,
-                          flexWrap: "wrap",
-                          marginBottom: 8,
+                          background: "var(--color-bg-secondary)",
+                          border: "1px solid var(--color-border)",
                         }}
                       >
-                        <Link href={`/profile/${review.userId}`} style={{ fontWeight: "600" }}>
-                          {review.userName}
-                        </Link>
-                        <span style={{ color: "var(--color-text-tertiary)", fontSize: "12px" }}>
-                          {review.date}
-                        </span>
-                      </div>
+                        <div
+                          style={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            gap: 12,
+                            flexWrap: "wrap",
+                            marginBottom: 8,
+                          }}
+                        >
+                          <span style={{ fontWeight: "600" }}>{review.fromUserId}</span>
+                          <span style={{ color: "var(--color-text-tertiary)", fontSize: "12px" }}>
+                            {new Date(review.createdAt).toLocaleDateString("ru-RU")}
+                          </span>
+                        </div>
 
-                      <div style={{ marginBottom: 8 }}>
-                        <span style={{ fontSize: "14px", fontWeight: "500" }}>
-                          {Array.from({ length: review.rating }).map(() => "★").join("")}
-                        </span>
+                        <div style={{ marginBottom: 8 }}>
+                          <span style={{ fontSize: "14px", fontWeight: "500" }}>
+                            {Array.from({ length: review.rating }).map(() => "★").join("")}
+                          </span>
+                        </div>
+                        <p style={{ margin: 0, fontSize: "13px", color: "var(--color-text-secondary)" }}>
+                          {review.comment}
+                        </p>
                       </div>
-                      <p style={{ margin: 0, fontSize: "13px", color: "var(--color-text-secondary)" }}>
-                        {review.comment}
-                      </p>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
 
             <div>
@@ -308,13 +207,71 @@ export default function SkillDetails({ skillId }: Props) {
                   Информация о навыке
                 </h2>
 
+                {error && (
+                  <div style={{ background: "#fee", padding: "8px 12px", borderRadius: "6px", fontSize: "12px", color: "#c33", marginBottom: "12px" }}>
+                    {error}
+                  </div>
+                )}
+
+                <div
+                  style={{
+                    background: "var(--color-bg-secondary)",
+                    border: "1px solid var(--color-border)",
+                    borderRadius: "6px",
+                    padding: "16px",
+                    marginBottom: "20px",
+                    textAlign: "center",
+                  }}
+                >
+                  <div style={{ fontSize: "12px", color: "var(--color-text-tertiary)", marginBottom: "4px" }}>
+                    Цена урока
+                  </div>
+                  <div style={{ fontSize: "24px", fontWeight: "700", color: "var(--color-primary)" }}>
+                    {skill?.price} ₽
+                  </div>
+                  {user && (
+                    <div style={{ fontSize: "12px", color: "var(--color-text-tertiary)", marginTop: "8px" }}>
+                      Ваш баланс: {user.balance} ₽
+                      {(user.balance || 0) < (skill?.price || 0) && (
+                        <div style={{ color: "#c33", fontWeight: "500", marginTop: "4px" }}>
+                          Недостаточно средств
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+
                 <button
                   className="btn btn-primary"
-                  style={{ width: "100%", padding: "12px 16px", fontSize: "14px", fontWeight: "600", marginBottom: "20px" }}
-                  onClick={handleOrder}
+                  style={{
+                    width: "100%",
+                    padding: "12px 16px",
+                    fontSize: "14px",
+                    fontWeight: "600",
+                    marginBottom: "20px",
+                    opacity: isOrdering ? 0.6 : 1,
+                  }}
+                  onClick={() => setShowModal(true)}
+                  disabled={isOrdering || !canOrder}
                 >
-                  Заказать навык
+                  {isOrdering ? "Заказываю..." : "Заказать навык"}
                 </button>
+
+                {!user && (
+                  <button
+                    className="btn btn-secondary"
+                    style={{
+                      width: "100%",
+                      padding: "12px 16px",
+                      fontSize: "14px",
+                      fontWeight: "600",
+                      marginBottom: "20px",
+                    }}
+                    onClick={() => router.push("/login")}
+                  >
+                    Войти для заказа
+                  </button>
+                )}
 
                 <div
                   style={{
@@ -327,19 +284,19 @@ export default function SkillDetails({ skillId }: Props) {
                   <div>
                     <span className="text-secondary">Исполнитель</span>
                     <br />
-                    <Link href={`/profile/${skill.instructorId}`} style={{ color: "var(--color-primary)", fontWeight: "600" }}>
-                      {skill.instructor}
+                    <Link href={`/profile/${skill?.authorId}`} style={{ color: "var(--color-primary)", fontWeight: "600" }}>
+                      {skill?.authorId}
                     </Link>
                   </div>
                   <div style={{ borderTop: "1px solid var(--color-border)", paddingTop: "12px" }}>
                     <span className="text-secondary">Категория</span>
                     <br />
-                    <b>{skill.category}</b>
+                    <b>{skill?.category}</b>
                   </div>
                   <div style={{ borderTop: "1px solid var(--color-border)", paddingTop: "12px" }}>
                     <span className="text-secondary">Всего отзывов</span>
                     <br />
-                    <b>{skill.reviewsCount}</b>
+                    <b>{skillReviews.length}</b>
                   </div>
                 </div>
               </div>
@@ -347,6 +304,70 @@ export default function SkillDetails({ skillId }: Props) {
           </div>
         )}
 
+        {/* Modal */}
+        {showModal && (
+          <div
+            style={{
+              position: "fixed",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              background: "rgba(0, 0, 0, 0.5)",
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              zIndex: 1000,
+            }}
+            onClick={() => setShowModal(false)}
+          >
+            <div
+              className="card"
+              style={{
+                maxWidth: "400px",
+                width: "90%",
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h2>Подтверждение заказа</h2>
+              <div style={{ background: "var(--color-bg-secondary)", padding: "16px", borderRadius: "6px", marginTop: "16px", marginBottom: "16px" }}>
+                <p style={{ margin: "0 0 8px", fontSize: "13px" }}>
+                  <b>{skill?.title}</b>
+                </p>
+                <p style={{ margin: "0 0 8px", fontSize: "12px", color: "var(--color-text-secondary)" }}>
+                  Инструктор: {skill?.authorId}
+                </p>
+                <p style={{ margin: "0 0 8px", fontSize: "12px", color: "var(--color-text-secondary)" }}>
+                  Длительность: {skill?.duration} минут
+                </p>
+                <p style={{ margin: "0 0 8px", fontSize: "13px", fontWeight: "600" }}>
+                  Сумма: {skill?.price} ₽
+                </p>
+                <p style={{ margin: 0, fontSize: "12px", color: "var(--color-text-secondary)" }}>
+                  Ваш баланс: {user?.balance} ₽
+                </p>
+              </div>
+              <div style={{ display: "flex", gap: "12px" }}>
+                <button
+                  className="btn btn-secondary"
+                  style={{ flex: 1 }}
+                  onClick={() => setShowModal(false)}
+                  disabled={isOrdering}
+                >
+                  Отмена
+                </button>
+                <button
+                  className="btn btn-primary"
+                  style={{ flex: 1 }}
+                  onClick={handleOrder}
+                  disabled={isOrdering || !canOrder}
+                >
+                  {isOrdering ? "Заказываю..." : "Подтвердить"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </main>
   );

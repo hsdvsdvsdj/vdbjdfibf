@@ -48,6 +48,8 @@ class ApiClient {
     return headers;
   }
 
+
+
   private async handleResponse<T>(response: Response): Promise<T> {
     if (!response.ok) {
       try {
@@ -71,6 +73,7 @@ class ApiClient {
     const response = await fetch(`${this.baseUrl}/auth/register`, {
       method: "POST",
       headers: this.getHeaders(false),
+      credentials: "include",
       body: JSON.stringify(data),
     });
 
@@ -303,6 +306,60 @@ class ApiClient {
       headers: this.getHeaders(true),
       credentials: "include",
       body: JSON.stringify({ message }),
+    });
+
+    return this.handleResponse(response);
+  }
+
+  // Generic methods for flexible API calls
+  async get(endpoint: string, params?: Record<string, any>): Promise<any> {
+    const queryParams = new URLSearchParams();
+    if (params) {
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined) {
+          queryParams.append(key, String(value));
+        }
+      });
+    }
+
+    const url = queryParams.toString() ? `${this.baseUrl}${endpoint}?${queryParams.toString()}` : `${this.baseUrl}${endpoint}`;
+    
+    const response = await fetch(url, {
+      method: "GET",
+      headers: this.getHeaders(true),
+      credentials: "include",
+    });
+
+    return this.handleResponse(response);
+  }
+
+  async post(endpoint: string, data: any): Promise<any> {
+    const response = await fetch(`${this.baseUrl}${endpoint}`, {
+      method: "POST",
+      headers: this.getHeaders(true),
+      credentials: "include",
+      body: JSON.stringify(data),
+    });
+
+    return this.handleResponse(response);
+  }
+
+  async put(endpoint: string, data?: any): Promise<any> {
+    const response = await fetch(`${this.baseUrl}${endpoint}`, {
+      method: "PUT",
+      headers: this.getHeaders(true),
+      credentials: "include",
+      body: data ? JSON.stringify(data) : undefined,
+    });
+
+    return this.handleResponse(response);
+  }
+
+  async delete(endpoint: string): Promise<any> {
+    const response = await fetch(`${this.baseUrl}${endpoint}`, {
+      method: "DELETE",
+      headers: this.getHeaders(true),
+      credentials: "include",
     });
 
     return this.handleResponse(response);

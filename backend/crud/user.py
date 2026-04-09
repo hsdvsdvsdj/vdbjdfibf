@@ -1,19 +1,22 @@
-from sqlalchemy import select, or_
+from sqlalchemy import select, or_, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from database.models import User
 
 
 async def get_user_by_login(session: AsyncSession, login: str):
+    norm = login.strip().lower()
     result = await session.execute(
-        select(User).where(User.login == login)
+        select(User).where(func.lower(User.login) == norm)
     )
     return result.scalar_one_or_none()
 
 
 async def get_user_by_email(session: AsyncSession, email: str):
+    if email is None:
+        return None
     result = await session.execute(
-        select(User).where(User.email == email)
+        select(User).where(func.lower(User.email) == email.strip().lower())
     )
     return result.scalar_one_or_none()
 
@@ -26,9 +29,10 @@ async def get_user_by_id(session: AsyncSession, user_id: int):
 
 
 async def get_user_by_login_or_email(session: AsyncSession, login: str, email: str | None):
-    conditions = [User.login == login]
+    norm_login = login.strip().lower()
+    conditions = [func.lower(User.login) == norm_login]
     if email:
-        conditions.append(User.email == email)
+        conditions.append(func.lower(User.email) == email.strip().lower())
 
     result = await session.execute(
         select(User).where(or_(*conditions))
@@ -43,10 +47,13 @@ async def create_user(
     email: str | None = None,
     nickname: str | None = None,
 ):
+    norm_login = login.strip()
+    norm_email = email.strip() if email else None
+
     user = User(
-        login=login,
+        login=norm_login,
         hashed_password=hashed_password,
-        email=email,
+        email=norm_email,
         nickname=nickname,
         is_verified=False
     )

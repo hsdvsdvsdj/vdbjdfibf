@@ -1,301 +1,164 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useAuth } from "../context/AuthContext";
 import { SkeletonCard } from "./Skeleton";
 
-const mockSkills = [
-  { id: "1", title: "Основы игры на гитаре" },
-  { id: "2", title: "Приготовление суши" },
-  { id: "3", title: "Python для начинающих" },
-];
-
-const mockReviews = [
-  {
-    id: "1",
-    author: "Анна",
-    skillId: "1",
-    skillTitle: "Основы игры на гитаре",
-    text: "Очень понравилась работа, все объяснили быстро и понятно.",
-    rating: 5,
-    date: "11.03.2026",
-  },
-  {
-    id: "2",
-    author: "Сергей",
-    skillId: "2",
-    skillTitle: "Приготовление суши",
-    text: "Хороший исполнитель, рекомендую.",
-    rating: 4,
-    date: "08.03.2026",
-  },
-  {
-    id: "3",
-    author: "Марина",
-    skillId: "1",
-    skillTitle: "Основы игры на гитаре",
-    text: "Все было качественно, осталась довольна.",
-    rating: 5,
-    date: "03.03.2026",
-  },
-];
-
 export default function Reviews() {
+  const { reviews, skills } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
-  const [reviews, setReviews] = useState(mockReviews);
-  const [selectedSkill, setSelectedSkill] = useState(mockSkills[0].id);
-  const [rating, setRating] = useState(5);
-  const [text, setText] = useState("");
-  const [authorName, setAuthorName] = useState("");
-  const [error, setError] = useState("");
+  const [selectedSkill, setSelectedSkill] = useState("");
 
   useEffect(() => {
-    const timer = setTimeout(() => setIsLoading(false), 800);
+    const timer = setTimeout(() => setIsLoading(false), 500);
     return () => clearTimeout(timer);
   }, []);
 
-  const handleSubmitReview = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setError("");
-
-    if (!authorName.trim() || !text.trim()) {
-      setError("Заполни имя и текст отзыва");
-      return;
+  useEffect(() => {
+    if (skills.length > 0 && !selectedSkill) {
+      setSelectedSkill(skills[0].id);
     }
+  }, [skills]);
 
-    const skill = mockSkills.find(s => s.id === selectedSkill);
-    if (!skill) return;
+  const skillReviews = selectedSkill
+    ? reviews.filter((r) => r.skillId === selectedSkill)
+    : [];
 
-    const today = new Date();
-    const dateStr = `${String(today.getDate()).padStart(2, "0")}.${String(today.getMonth() + 1).padStart(2, "0")}.${today.getFullYear()}`;
+  const avgRating = skillReviews.length > 0
+    ? (skillReviews.reduce((sum, r) => sum + r.rating, 0) / skillReviews.length).toFixed(1)
+    : "0";
 
-    const newReview = {
-      id: Date.now().toString(),
-      author: authorName.trim(),
-      skillId: selectedSkill,
-      skillTitle: skill.title,
-      text: text.trim(),
-      rating: rating,
-      date: dateStr,
-    };
-
-    setReviews((prev) => [newReview, ...prev]);
-    setAuthorName("");
-    setText("");
-    setRating(5);
-  };
-
-  const averageRating = (
-    reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length
-  ).toFixed(1);
+  const ratingDistribution = [5, 4, 3, 2, 1].map((rating) => ({
+    rating,
+    count: skillReviews.filter((r) => r.rating === rating).length,
+  }));
 
   return (
     <main className="page">
       <div className="container">
-        <h1 className="title" style={{ marginBottom: "32px" }}>Отзывы</h1>
+        <h1 className="title" style={{ marginBottom: 24 }}>Отзывы</h1>
 
-        {/* Rating Summary */}
-        <div className="card" style={{ marginBottom: 24, background: "linear-gradient(135deg, var(--color-bg-secondary) 0%, var(--color-bg-tertiary) 100%)" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 24 }}>
-            <div>
-              <div style={{ fontSize: 56, fontWeight: 700, color: "var(--color-primary)" }}>
-                {averageRating}
-              </div>
-              <div style={{ color: "var(--color-text-secondary)", fontSize: "13px", fontWeight: "600" }}>
-                из 5.0
-              </div>
-            </div>
-            <div style={{ flex: 1 }}>
-              <p style={{ margin: "0 0 12px", color: "var(--color-text-secondary)", fontSize: "14px" }}>
-                Средняя оценка от {reviews.length} отзывов
-              </p>
-              <div style={{ fontSize: "18px", letterSpacing: "2px" }}>
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <span key={i} style={{ color: i < Math.round(parseFloat(averageRating)) ? "#FFD700" : "#DDD" }}>
-                    ★
-                  </span>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Leave a Review Form */}
-        <div className="card" style={{ padding: "28px", marginBottom: "32px", background: "linear-gradient(135deg, var(--color-bg-secondary) 0%, var(--color-bg-tertiary) 100%)" }}>
-          <h2 style={{
-            fontSize: "20px",
-            fontWeight: "700",
-            margin: "0 0 24px 0",
-            color: "var(--color-text-primary)"
-          }}>
-            Оставить отзыв
-          </h2>
-
-          <form onSubmit={handleSubmitReview} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-            {/* Skill Selection */}
-            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-              <label style={{ fontWeight: "600", fontSize: "14px", color: "var(--color-text-primary)" }}>
-                На какой навык оставить отзыв
-              </label>
-              <select
-                value={selectedSkill}
-                onChange={(e) => setSelectedSkill(e.target.value)}
-                style={{ padding: "10px 12px", fontSize: "14px" }}
-              >
-                {mockSkills.map(skill => (
-                  <option key={skill.id} value={skill.id}>{skill.title}</option>
-                ))}
-              </select>
-            </div>
-
-            {/* Name Input */}
-            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-              <label style={{ fontWeight: "600", fontSize: "14px", color: "var(--color-text-primary)" }}>
-                Твое имя
-              </label>
-              <input
-                type="text"
-                className="input"
-                placeholder="Как тебя зовут?"
-                value={authorName}
-                onChange={(e) => setAuthorName(e.target.value)}
-              />
-            </div>
-
-            {/* Rating Selection */}
-            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-              <label style={{ fontWeight: "600", fontSize: "14px", color: "var(--color-text-primary)" }}>
-                Оценка
-              </label>
-              <div style={{
-                display: "flex",
-                gap: "8px",
-                padding: "12px 16px",
-                background: "rgba(255, 215, 0, 0.08)",
-                borderRadius: "8px"
-              }}>
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <button
-                    key={i}
-                    type="button"
-                    onClick={() => setRating(i + 1)}
-                    style={{
-                      background: "none",
-                      border: "none",
-                      fontSize: "28px",
-                      cursor: "pointer",
-                      color: i < rating ? "#FFD700" : "#DDD",
-                      transition: "all 0.2s",
-                    }}
-                  >
-                    ★
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Review Text */}
-            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-              <label style={{ fontWeight: "600", fontSize: "14px", color: "var(--color-text-primary)" }}>
-                Твой отзыв
-              </label>
-              <textarea
-                className="input"
-                placeholder="Напиши подробный отзыв..."
-                value={text}
-                onChange={(e) => setText(e.target.value)}
-                rows={4}
-                style={{ resize: "none" }}
-              />
-            </div>
-
-            {/* Error Message */}
-            {error && (
-              <div style={{
-                background: "#ffebee",
-                color: "#c62828",
-                padding: "12px 16px",
-                borderRadius: "8px",
-                fontSize: "13px",
-                borderLeft: "3px solid #c62828"
-              }}>
-                {error}
-              </div>
-            )}
-
-            {/* Submit Button */}
-            <button
-              type="submit"
-              className="btn btn-primary"
-              style={{ padding: "12px 24px", fontSize: "14px" }}
-            >
-              Опубликовать отзыв
-            </button>
-          </form>
-        </div>
-
-        {/* Reviews List */}
-        {isLoading ? (
-          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-            <SkeletonCard />
-            <SkeletonCard />
-            <SkeletonCard />
-          </div>
-        ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-            {reviews.map((review) => (
-              <div key={review.id} className="card" style={{
-                padding: "20px 24px",
-                borderLeft: "3px solid var(--color-primary)"
-              }}>
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    gap: 12,
-                    flexWrap: "wrap",
-                    marginBottom: 12,
-                    alignItems: "flex-start",
-                  }}
-                >
-                  <div>
-                    <h3 style={{ margin: "0 0 4px", fontWeight: "600", fontSize: "16px", color: "var(--color-text-primary)" }}>
-                      {review.author}
-                    </h3>
-                    <p style={{ margin: "0 0 4px", fontSize: "13px", color: "var(--color-text-secondary)" }}>
-                      {review.skillTitle}
-                    </p>
-                    <span
+        <div style={{ display: "grid", gridTemplateColumns: "300px 1fr", gap: 24 }}>
+          {/* Боковая панель */}
+          <div>
+            <div className="card">
+              <h3 className="subtitle" style={{ marginTop: 0 }}>Ваши навыки</h3>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {skills.length > 0 ? (
+                  skills.map((skill) => (
+                    <button
+                      key={skill.id}
+                      onClick={() => setSelectedSkill(skill.id)}
                       style={{
-                        color: "var(--color-text-secondary)",
-                        fontSize: "12px",
+                        padding: "12px",
+                        background: selectedSkill === skill.id ? "var(--color-primary)" : "var(--color-bg-secondary)",
+                        color: selectedSkill === skill.id ? "white" : "var(--color-text)",
+                        border: "none",
+                        borderRadius: "6px",
+                        cursor: "pointer",
+                        fontSize: "13px",
+                        fontWeight: "500",
+                        textAlign: "left",
                       }}
                     >
-                      {review.date}
-                    </span>
-                  </div>
-                  <div style={{ fontSize: "18px", fontWeight: "600", letterSpacing: "1px" }}>
-                    {Array.from({ length: 5 }).map((_, i) => (
-                      <span key={i} style={{ color: i < review.rating ? "#FFD700" : "#DDD" }}>
-                        ★
-                      </span>
-                    ))}
+                      {skill.title}
+                    </button>
+                  ))
+                ) : (
+                  <p className="text-secondary">Нет навыков</p>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Основная область */}
+          <div>
+            {isLoading ? (
+              <div style={{ display: "grid", gap: 16 }}>
+                {[1, 2, 3].map((i) => (<SkeletonCard key={i} />))}
+              </div>
+            ) : (
+              <>
+                {/* Статистика рейтинга */}
+                <div className="card" style={{ marginBottom: 24 }}>
+                  <h2>Рейтинг</h2>
+                  <div style={{ display: "grid", gridTemplateColumns: "150px 1fr", gap: 32, alignItems: "center" }}>
+                    <div style={{ textAlign: "center" }}>
+                      <div style={{ fontSize: "48px", fontWeight: "700", color: "var(--color-primary)" }}>
+                        {avgRating}
+                      </div>
+                      <div style={{ fontSize: "16px", color: "var(--color-text-secondary)" }}>
+                        ⭐ из 5
+                      </div>
+                      <div style={{ fontSize: "12px", color: "var(--color-text-secondary)", marginTop: "8px" }}>
+                        {skillReviews.length} отзывов
+                      </div>
+                    </div>
+
+                    <div>
+                      {ratingDistribution.map(({ rating, count }) => (
+                        <div key={rating} style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "8px" }}>
+                          <span style={{ width: "40px", fontSize: "12px" }}>{rating}★</span>
+                          <div style={{
+                            flex: 1,
+                            height: "8px",
+                            background: "var(--color-bg-secondary)",
+                            borderRadius: "4px",
+                            overflow: "hidden",
+                          }}>
+                            <div style={{
+                              height: "100%",
+                              background: "var(--color-primary)",
+                              width: `${skillReviews.length > 0 ? (count / skillReviews.length) * 100 : 0}%`,
+                            }} />
+                          </div>
+                          <span style={{ width: "30px", fontSize: "12px", color: "var(--color-text-secondary)" }}>
+                            {count}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
 
-                <p
-                  style={{
-                    margin: 0,
-                    color: "var(--color-text-primary)",
-                    lineHeight: "1.6",
-                    fontSize: "14px",
-                  }}
-                >
-                  {review.text}
-                </p>
-              </div>
-            ))}
+                {/* Список отзывов */}
+                <div className="card">
+                  <h2>Отзывы учеников</h2>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                    {skillReviews.length > 0 ? (
+                      skillReviews.map((review) => (
+                        <div
+                          key={review.id}
+                          style={{
+                            padding: "16px",
+                            background: "var(--color-bg-secondary)",
+                            borderRadius: "8px",
+                            borderLeft: "3px solid var(--color-primary)",
+                          }}
+                        >
+                          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "8px" }}>
+                            <strong>{review.fromUserId}</strong>
+                            <span style={{ color: "var(--color-text-secondary)", fontSize: "12px" }}>
+                              {new Date(review.createdAt).toLocaleDateString("ru-RU")}
+                            </span>
+                          </div>
+                          <div style={{ marginBottom: "8px", fontSize: "14px", fontWeight: "500" }}>
+                            {"⭐".repeat(review.rating)}
+                          </div>
+                          <p style={{ margin: 0, color: "var(--color-text-secondary)" }}>
+                            {review.comment}
+                          </p>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-secondary">Нет отзывов</p>
+                    )}
+                  </div>
+                </div>
+              </>
+            )}
           </div>
-        )}
+        </div>
       </div>
     </main>
   );

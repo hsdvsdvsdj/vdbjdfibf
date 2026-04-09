@@ -25,20 +25,7 @@ export default function RootLayoutComponent({
     <>
       <header className="header">
         <div className="container header-inner">
-          <Link
-            href={isAuthenticated ? "/home" : "/"}
-            className="title"
-            style={{ 
-              margin: 0, 
-              fontSize: 22, 
-              fontWeight: 700,
-              display: "flex",
-              alignItems: "center",
-              gap: "6px",
-              textDecoration: "none",
-              color: "inherit"
-            }}
-          >
+          <Link href={isAuthenticated ? "/home" : "/"} className="title site-title">
             <div style={{ display: "flex", alignItems: "center", flexShrink: 0 }}>
               <Logo />
             </div>
@@ -67,16 +54,16 @@ export default function RootLayoutComponent({
                   Заказы
                 </Link>
                 <Link
-                  href="/chat"
-                  className={`nav-link ${pathname === "/chat" || pathname.includes("/chat") ? "active" : ""}`}
-                >
-                  Чат
-                </Link>
-                <Link
                   href="/reviews"
                   className={`nav-link ${pathname === "/reviews" ? "active" : ""}`}
                 >
                   Отзывы
+                </Link>
+                <Link
+                  href="/balance"
+                  className={`nav-link ${pathname === "/balance" ? "active" : ""}`}
+                >
+                  Баланс: {user?.balance} Р
                 </Link>
                 <Link
                   href="/profile"

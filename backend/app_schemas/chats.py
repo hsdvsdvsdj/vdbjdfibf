@@ -14,7 +14,7 @@ class MessageResponseSchema(BaseModel):
     datetime: datetime
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class ChatResponseSchema(BaseModel):
@@ -25,4 +25,4 @@ class ChatResponseSchema(BaseModel):
     messages: list[MessageResponseSchema] = []
 
     class Config:
-        orm_mode = True
+        from_attributes = True

@@ -2,78 +2,45 @@
 
 import { useMemo, useState, useEffect } from "react";
 import Link from "next/link";
+import { useAuth } from "../context/AuthContext";
 import { SkeletonGrid } from "./Skeleton";
 
-interface Skill {
-  id: string;
-  title: string;
-  description: string;
-  category: string;
-  instructor: string;
-  rating: number;
-}
-
-const mockSkills: Skill[] = [
-  {
-    id: "1",
-    title: "Основы игры на гитаре",
-    description: "Научу базовым аккордам и технике игры на акустической гитаре.",
-    category: "Музыка",
-    instructor: "Алексей М.",
-    rating: 4.8,
-  },
-  {
-    id: "2",
-    title: "Приготовление суши",
-    description: "Покажу, как правильно готовить роллы и суши в домашних условиях.",
-    category: "Кулинария",
-    instructor: "Мария К.",
-    rating: 4.9,
-  },
-  {
-    id: "3",
-    title: "Python для начинающих",
-    description: "Основы программирования на Python: переменные, циклы, функции.",
-    category: "IT",
-    instructor: "Дмитрий С.",
-    rating: 4.7,
-  },
-  {
-    id: "4",
-    title: "Йога для начинающих",
-    description: "Базовые асаны и правильное дыхание для улучшения формы.",
-    category: "Здоровье",
-    instructor: "Елена В.",
-    rating: 4.6,
-  },
-];
-
 export default function Search() {
+  const { skills } = useAuth();
   const [query, setQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("Все");
+  const [sortBy, setSortBy] = useState("popular");
   const [isLoading, setIsLoading] = useState(false);
 
-  const categories = ["Все", "Музыка", "Кулинария", "IT", "Здоровье"];
+  const categories = ["Все", "Музыка", "Кулинария", "IT", "Здоровье", "Языки", "Дизайн", "Спорт", "Искусство", "Другое"];
 
   const filteredSkills = useMemo(() => {
-    return mockSkills.filter((skill) => {
+    let filtered = skills.filter((skill) => {
       const matchesQuery =
         skill.title.toLowerCase().includes(query.toLowerCase()) ||
-        skill.description.toLowerCase().includes(query.toLowerCase()) ||
-        skill.instructor.toLowerCase().includes(query.toLowerCase());
+        skill.description.toLowerCase().includes(query.toLowerCase());
 
-      const matchesCategory =
-        selectedCategory === "Все" || skill.category === selectedCategory;
+      const matchesCategory = selectedCategory === "Все" || skill.category === selectedCategory;
 
       return matchesQuery && matchesCategory;
     });
-  }, [query, selectedCategory]);
+
+    if (sortBy === "price-asc") {
+      filtered.sort((a, b) => a.price - b.price);
+    } else if (sortBy === "price-desc") {
+      filtered.sort((a, b) => b.price - a.price);
+    } else if (sortBy === "rating") {
+      filtered.sort((a, b) => b.rating - a.rating);
+    }
+
+    return filtered;
+  }, [query, selectedCategory, sortBy, skills]);
 
   useEffect(() => {
     setIsLoading(true);
-    const timer = setTimeout(() => setIsLoading(false), 500);
+    const timer = setTimeout(() => setIsLoading(false), 300);
     return () => clearTimeout(timer);
-  }, [query, selectedCategory]);
+  }, [query, selectedCategory, sortBy]);
 
   return (
     <main className="page">
@@ -84,110 +51,116 @@ export default function Search() {
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
             <input
               type="text"
-              placeholder="Поиск по названию, описанию или исполнителю…"
+              placeholder="Поиск по названию, описанию..."
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               style={{
-                padding: "12px 16px",
+                width: "100%",
+                padding: "12px",
+                borderRadius: "8px",
+                border: "1px solid var(--color-border)",
                 fontSize: "14px",
-                borderRadius: "6px",
-                border: "2px solid var(--color-primary)",
-                background: "var(--color-bg-secondary)",
-                color: "var(--color-text-primary)",
               }}
             />
 
-            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-              {categories.map((category) => (
-                <button
-                  key={category}
-                  className={selectedCategory === category ? "btn btn-primary" : "btn btn-secondary"}
-                  type="button"
-                  onClick={() => setSelectedCategory(category)}
-                  style={{ fontSize: "13px" }}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12 }}>
+              <div>
+                <label style={{ fontSize: "12px", color: "var(--color-text-secondary)", display: "block", marginBottom: 8 }}>
+                  Категория
+                </label>
+                <select
+                  value={selectedCategory}
+                  onChange={(e) => setSelectedCategory(e.target.value)}
+                  style={{
+                    width: "100%",
+                    padding: "8px 12px",
+                    borderRadius: "6px",
+                    border: "1px solid var(--color-border)",
+                    background: "var(--color-bg)",
+                  }}
                 >
-                  {category}
-                </button>
-              ))}
+                  {categories.map((cat) => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label style={{ fontSize: "12px", color: "var(--color-text-secondary)", display: "block", marginBottom: 8 }}>
+                  Сортировка
+                </label>
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value)}
+                  style={{
+                    width: "100%",
+                    padding: "8px 12px",
+                    borderRadius: "6px",
+                    border: "1px solid var(--color-border)",
+                    background: "var(--color-bg)",
+                  }}
+                >
+                  <option value="popular">По популярности</option>
+                  <option value="price-asc">Цена: по возрастанию</option>
+                  <option value="price-desc">Цена: по убыванию</option>
+                  <option value="rating">По рейтингу</option>
+                </select>
+              </div>
             </div>
           </div>
         </div>
 
-        <div
-          style={{
-            marginBottom: 16,
-            display: "flex",
-            justifyContent: "space-between",
-            gap: 12,
-            alignItems: "center",
-            flexWrap: "wrap",
-          }}
-        >
-          <p className="text-secondary" style={{ margin: 0, fontSize: "14px" }}>
-            Найдено навыков: <b>{filteredSkills.length}</b>
-          </p>
-        </div>
-
         {isLoading ? (
-          <SkeletonGrid columns={2} count={4} />
+          <SkeletonGrid columns={3} />
         ) : filteredSkills.length > 0 ? (
-          <div className="grid grid-2">
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 16 }}>
             {filteredSkills.map((skill) => (
-              <Link
-                key={skill.id}
-                href={`/skill/${skill.id}`}
-                style={{ textDecoration: "none" }}
-              >
-                <div className="card" style={{ display: "block", height: "100%" }}>
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      gap: 12,
-                      alignItems: "center",
-                      marginBottom: 12,
-                    }}
-                  >
-                    <span
-                      style={{
-                        background: "var(--color-bg-secondary)",
-                        color: "var(--color-text-secondary)",
-                        padding: "4px 8px",
-                        borderRadius: "4px",
-                        fontSize: "11px",
-                        fontWeight: "500",
-                      }}
-                    >
+              <Link key={skill.id} href={`/skill/${skill.id}`}>
+                <div className="card" style={{ cursor: "pointer", transition: "transform 0.2s" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", marginBottom: 12 }}>
+                    <span style={{
+                      background: "var(--color-bg-secondary)",
+                      color: "var(--color-text-secondary)",
+                      padding: "4px 8px",
+                      borderRadius: "4px",
+                      fontSize: "11px",
+                      fontWeight: "500",
+                    }}>
                       {skill.category}
                     </span>
-                    <span style={{ fontSize: "14px", fontWeight: "500" }}>⭐ {skill.rating}</span>
                   </div>
 
-                  <h2 className="subtitle">{skill.title}</h2>
-                  <p className="text-secondary" style={{ fontSize: "13px", margin: "8px 0" }}>
+                  <h3 style={{ margin: "0 0 8px", fontSize: "16px", fontWeight: "600" }}>
+                    {skill.title}
+                  </h3>
+
+                  <p style={{ margin: "0 0 12px", fontSize: "13px", color: "var(--color-text-secondary)", height: "40px", overflow: "hidden" }}>
                     {skill.description}
                   </p>
 
-                  <div
-                    style={{
-                      marginTop: 12,
-                      paddingTop: 12,
-                      borderTop: "1px solid var(--color-border)",
-                    }}
-                  >
-                    <p style={{ margin: 0, fontSize: "13px", color: "var(--color-text-secondary)" }}>
-                      {skill.instructor}
-                    </p>
+                  <div style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    paddingTop: "12px",
+                    borderTop: "1px solid var(--color-border)",
+                  }}>
+                    <div>
+                      <div style={{ fontSize: "18px", fontWeight: "700", color: "var(--color-primary)" }}>
+                        {skill.price} ₽
+                      </div>
+                      <div style={{ fontSize: "12px", color: "var(--color-text-secondary)" }}>
+                        ⭐ {skill.rating.toFixed(1)}
+                      </div>
+                    </div>
                   </div>
                 </div>
               </Link>
             ))}
           </div>
         ) : (
-          <div className="card" style={{ marginTop: 20, textAlign: "center" }}>
-            <p className="text-secondary" style={{ margin: 0 }}>
-              😔 Ничего не найдено. Попробуй изменить запрос или категорию.
-            </p>
+          <div className="card" style={{ textAlign: "center", padding: "40px 20px" }}>
+            <p className="text-secondary">Навыки не найдены</p>
           </div>
         )}
       </div>

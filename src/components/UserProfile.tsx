@@ -175,7 +175,7 @@ export default function UserProfile({ userId }: Props) {
                       lineHeight: 1.1,
                     }}
                   >
-                    {user.username}
+                    {user.login}
                   </h1>
 
                   <div

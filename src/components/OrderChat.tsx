@@ -1,250 +1,315 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "../context/AuthContext";
 
 interface Props {
   orderId: string;
+  type?: "chat" | "lesson";
 }
 
-interface ChatItem {
-  id: string;
-  personName: string;
-  skillTitle: string;
+interface Message {
+  id: number;
+  author: string;
+  text: string;
+  time: string;
 }
 
-const chats: ChatItem[] = [
-  { id: "1", personName: "Дмитрий", skillTitle: "Python для начинающих" },
-  { id: "2", personName: "Мария", skillTitle: "Приготовление суши" },
-  { id: "3", personName: "Алексей", skillTitle: "Основы игры на гитаре" },
-  { id: "4", personName: "Елена", skillTitle: "Йога для начинающих" },
-  { id: "5", personName: "Иван", skillTitle: "Язык JavaScript" },
-];
-
-const initialMessages = [
-  {
-    id: 1,
-    author: "Дмитрий",
-    text: "Здравствуйте! Хотел бы обсудить детали занятия.",
-    time: "12:10",
-  },
-  {
-    id: 2,
-    author: "Вы",
-    text: "Здравствуйте! Конечно, давайте уточним, что именно вам нужно.",
-    time: "12:12",
-  },
-];
-
-export default function OrderChat({ orderId }: Props) {
-  const [selectedChatId, setSelectedChatId] = useState(orderId === "general" ? chats[0].id : orderId);
-  const [messages, setMessages] = useState(initialMessages);
+export default function OrderChat({ orderId, type = "chat" }: Props) {
+  const router = useRouter();
+  const { orders, skills, user, addReview, updateOrderStatus } = useAuth();
+  const [messages, setMessages] = useState<Message[]>([]);
   const [text, setText] = useState("");
+  const [isLessonStarted, setIsLessonStarted] = useState(false);
+  const [elapsedTime, setElapsedTime] = useState(0);
+  const [showRating, setShowRating] = useState(false);
+  const [rating, setRating] = useState(5);
+  const [comment, setCommentText] = useState("");
+  
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
+  const order = orders.find((o) => o.id === orderId);
+  const skill = order ? skills.find((s) => s.id === order.skillId) : null;
 
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
 
-  const selectedChat = chats.find(c => c.id === selectedChatId);
-  const isGeneralChat = orderId === "general";
-  const headerTitle = selectedChat ? `${selectedChat.personName} — ${selectedChat.skillTitle}` : "Чат";
-  const headerSubtitle = "Обсуждение условий";
+  useEffect(() => {
+    if (isLessonStarted && timerRef.current === null) {
+      timerRef.current = setInterval(() => {
+        setElapsedTime((prev) => prev + 1);
+      }, 1000);
+    }
+    return () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+    };
+  }, [isLessonStarted]);
 
-  const handleSend = (e?: React.FormEvent<HTMLFormElement>) => {
-    e?.preventDefault();
+  const formatTime = (seconds: number): string => {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+    if (hours > 0) {
+      return `${hours}:${minutes.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
+    }
+    return `${minutes}:${secs.toString().padStart(2, "0")}`;
+  };
 
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  const handleSendMessage = () => {
     if (!text.trim()) return;
-
     setMessages((prev) => [
       ...prev,
       {
         id: Date.now(),
-        author: "Вы",
-        text: text.trim(),
-        time: new Date().toLocaleTimeString("ru-RU", {
-          hour: "2-digit",
-          minute: "2-digit",
-        }),
+        author: user?.login || "Вы",
+        text,
+        time: new Date().toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" }),
       },
     ]);
-
     setText("");
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
+  const handleStartLesson = () => {
+    setIsLessonStarted(true);
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: Date.now(),
+        author: "Система",
+        text: "Занятие началось ⏱️ Удачи в обучении!",
+        time: new Date().toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" }),
+      },
+    ]);
+    updateOrderStatus(orderId, "active");
+  };
+
+  const handleEndLesson = () => {
+    setIsLessonStarted(false);
+    if (timerRef.current) clearInterval(timerRef.current);
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: Date.now(),
+        author: "Система",
+        text: `Занятие завершено. Длительность: ${formatTime(elapsedTime)}`,
+        time: new Date().toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" }),
+      },
+    ]);
+    setShowRating(true);
+  };
+
+  const handleSubmitRating = async () => {
+    if (order && skill) {
+      try {
+        await addReview(orderId, skill.id, rating, comment);
+        setShowRating(false);
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: Date.now(),
+            author: "Система",
+            text: `✓ Спасибо за отзыв! Рейтинг ${rating}★`,
+            time: new Date().toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" }),
+          },
+        ]);
+        setTimeout(() => router.push("/orders"), 1500);
+      } catch (error) {
+        console.error("Failed to submit rating:", error);
+      }
     }
   };
 
-  return (
-    <div
-      style={{
-        minHeight: "calc(100vh - 120px)",
-        padding: "24px",
-        boxSizing: "border-box",
-        display: "grid",
-        gridTemplateColumns: "280px 1fr",
-        gap: "24px",
-      }}
-    >
-      {/* Chat List */}
-      <div style={{ height: "100%", display: "flex", flexDirection: "column" }}>
-        <h2
-          style={{
-            fontSize: "16px",
-            fontWeight: "700",
-            margin: "0 0 16px 0",
-            color: "var(--color-text-primary)",
-          }}
-        >
-          Чаты
-        </h2>
-        <div style={{ display: "flex", flexDirection: "column", gap: "8px", overflowY: "auto", paddingRight: "4px" }}>
-          {chats.map((chat) => (
-            <button
-              key={chat.id}
-              onClick={() => setSelectedChatId(chat.id)}
-              style={{
-                padding: "12px 16px",
-                background: selectedChatId === chat.id ? "var(--color-primary)" : "var(--color-bg-secondary)",
-                color: selectedChatId === chat.id ? "white" : "var(--color-text-secondary)",
-                border: "1px solid var(--color-border)",
-                borderRadius: "8px",
-                cursor: "pointer",
-                textAlign: "left",
-                fontSize: "13px",
-                fontWeight: selectedChatId === chat.id ? "600" : "400",
-                transition: "all 0.2s",
-              }}
-              onMouseEnter={(e) => {
-                if (selectedChatId !== chat.id) {
-                  e.currentTarget.style.background = "var(--color-bg-tertiary)";
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (selectedChatId !== chat.id) {
-                  e.currentTarget.style.background = "var(--color-bg-secondary)";
-                }
-              }}
-            >
-              <div style={{ fontWeight: "600", marginBottom: "4px" }}>{chat.personName}</div>
-              <div style={{ fontSize: "12px", opacity: 0.8 }}>{chat.skillTitle}</div>
-            </button>
-          ))}
+  if (!order || !skill) {
+    return (
+      <main className="page">
+        <div className="container">
+          <div className="card">
+            <h1>Заказ не найден</h1>
+            <button className="btn btn-secondary" onClick={() => router.back()}>Назад</button>
+          </div>
         </div>
-      </div>
+      </main>
+    );
+  }
 
-      {/* Chat Area */}
-      <div style={{ height: "100%", display: "flex", flexDirection: "column" }}>
-            {/* Chat Header */}
-            <div
-              className="card"
-              style={{
-                padding: "16px 24px",
+  return (
+    <main className="page">
+      <div className="container">
+        <button className="btn btn-secondary" style={{ marginBottom: 24 }} onClick={() => router.back()}>
+          ← Назад
+        </button>
+
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 300px", gap: 24 }}>
+          <div className="card">
+            <h2>{skill.title}</h2>
+            {isLessonStarted && (
+              <div style={{ 
+                background: "var(--color-primary)",
+                color: "white",
+                padding: "8px 12px",
+                borderRadius: "6px",
+                fontSize: "14px",
+                fontWeight: "600",
                 marginBottom: "16px",
-                background: "linear-gradient(135deg, var(--color-bg-secondary) 0%, var(--color-bg-tertiary) 100%)",
-                borderRadius: "8px",
-              }}
-            >
-              <h2
-                style={{
-                  margin: "0 0 4px 0",
-                  fontSize: "18px",
-                  fontWeight: "700",
-                  color: "var(--color-text-primary)",
-                }}
-              >
-                {headerTitle}
-              </h2>
-              <p
-                style={{
-                  margin: 0,
-                  fontSize: "13px",
-                  color: "var(--color-text-secondary)",
-                }}
-              >
-                {headerSubtitle}
-              </p>
+              }}>
+                ⏱ {formatTime(elapsedTime)}
+              </div>
+            )}
+
+            {/* Chat */}
+            <div style={{
+              background: "var(--color-bg-secondary)",
+              borderRadius: "8px",
+              padding: "16px",
+              height: "400px",
+              overflowY: "auto",
+              marginBottom: "16px",
+              display: "flex",
+              flexDirection: "column",
+            }}>
+              {messages.map((msg) => (
+                <div key={msg.id} style={{ marginBottom: "12px", display: "flex", flexDirection: msg.author === user?.login ? "row-reverse" : "row", gap: "8px" }}>
+                  <div style={{
+                    background: msg.author === user?.login ? "var(--color-primary)" : "var(--color-border)",
+                    color: msg.author === user?.login ? "white" : "var(--color-text)",
+                    padding: "8px 12px",
+                    borderRadius: "8px",
+                    maxWidth: "70%",
+                    fontSize: "13px",
+                  }}>
+                    {msg.author !== "Система" && <b>{msg.author}:</b>}{" "}{msg.text}
+                  </div>
+                </div>
+              ))}
+              <div ref={messagesEndRef} />
             </div>
 
-            {/* Chat Messages */}
-            <div
-              className="card"
-              style={{
-                padding: "24px",
-                display: "flex",
-                flexDirection: "column",
-                gap: "12px",
-                flex: 1,
-                minHeight: 0,
-              }}
-            >
-              <div
+            <div style={{ display: "flex", gap: "8px" }}>
+              <input
+                type="text"
+                placeholder="Написать сообщение..."
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+                onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
                 style={{
-                  display: "grid",
-                  gap: 12,
                   flex: 1,
-                  minHeight: 0,
-                  overflowY: "auto",
+                  padding: "8px 12px",
+                  borderRadius: "6px",
+                  border: "1px solid var(--color-border)",
                 }}
+              />
+              <button className="btn btn-primary" onClick={handleSendMessage} style={{ padding: "8px 16px" }}>
+                Отправить
+              </button>
+            </div>
+
+            {order.status === "pending" && !isLessonStarted && (
+              <button
+                className="btn btn-primary"
+                style={{ width: "100%", marginTop: "16px" }}
+                onClick={handleStartLesson}
               >
-                {messages.map((message) => (
-                  <div
-                    key={message.id}
-                    style={{
-                      padding: "16px",
-                      borderRadius: "8px",
-                      background: message.author === "Вы" ? "rgba(59, 130, 246, 0.1)" : "var(--color-bg-secondary)",
-                      border: "1px solid var(--color-border)"
-                    }}
-                  >
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        gap: 12,
-                        marginBottom: 8,
-                        flexWrap: "wrap",
-                      }}
-                    >
-                      <b style={{ color: "var(--color-text-primary)" }}>{message.author}</b>
-                      <span style={{ fontSize: "12px", color: "var(--color-text-secondary)" }}>{message.time}</span>
-                    </div>
+                Начать занятие
+              </button>
+            )}
 
-                    <p style={{ margin: 0, color: "var(--color-text-primary)", lineHeight: "1.5" }}>{message.text}</p>
-                  </div>
-                ))}
-                <div ref={messagesEndRef} />
+            {isLessonStarted && (
+              <button
+                className="btn btn-secondary"
+                style={{ width: "100%", marginTop: "16px", background: "#fee", color: "#c33", border: "1px solid #fcc" }}
+                onClick={handleEndLesson}
+              >
+                Завершить занятие
+              </button>
+            )}
+          </div>
+
+          <div>
+            <div className="card">
+              <h3>Информация</h3>
+              <div style={{ fontSize: "13px", display: "flex", flexDirection: "column", gap: "12px" }}>
+                <div>
+                  <span className="text-secondary">Статус</span>
+                  <br />
+                  <b>{order.status === "pending" ? "Ожидает" : order.status === "active" ? "В процессе" : "Завершен"}</b>
+                </div>
+                <div style={{ borderTop: "1px solid var(--color-border)", paddingTop: "12px" }}>
+                  <span className="text-secondary">Сумма</span>
+                  <br />
+                  <b>{order.price} ₽</b>
+                </div>
               </div>
-
-              {/* Message Input */}
-              <form style={{ display: "flex", gap: "8px", alignItems: "center" }} onSubmit={handleSend}>
-                <textarea
-                  className="input"
-                  placeholder="Введи сообщение..."
-                  value={text}
-                  onChange={(e) => setText(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  rows={2}
-                  style={{ resize: "none", flex: 1 }}
-                />
-
-                <button
-                  className="btn btn-primary"
-                  type="submit"
-                  style={{ padding: "8px 16px", fontSize: "13px", whiteSpace: "nowrap", height: "fit-content" }}
-                >
-                  Отправить
-                </button>
-              </form>
             </div>
           </div>
         </div>
+
+        {/* Rating Modal */}
+        {showRating && (
+          <div style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: "rgba(0, 0, 0, 0.5)",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            zIndex: 1000,
+          }}>
+            <div className="card" style={{ maxWidth: "400px", width: "90%" }} onClick={(e) => e.stopPropagation()}>
+              <h2>Оцените занятие</h2>
+              <div style={{ margin: "20px 0" }}>
+                <p style={{ marginBottom: "12px", fontSize: "13px" }}>Ваша оценка:</p>
+                <div style={{ display: "flex", gap: "8px", justifyContent: "center", fontSize: "24px" }}>
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      onClick={() => setRating(star)}
+                      style={{
+                        background: "none",
+                        border: "none",
+                        cursor: "pointer",
+                        opacity: star <= rating ? 1 : 0.3,
+                        transform: star <= rating ? "scale(1.1)" : "scale(1)",
+                      }}
+                    >
+                      ★
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <textarea
+                placeholder="Ваш отзыв (необязательно)..."
+                value={comment}
+                onChange={(e) => setCommentText(e.target.value)}
+                style={{
+                  width: "100%",
+                  padding: "8px",
+                  borderRadius: "6px",
+                  border: "1px solid var(--color-border)",
+                  minHeight: "80px",
+                  marginBottom: "16px",
+                  fontFamily: "inherit",
+                }}
+              />
+              <button className="btn btn-primary" onClick={handleSubmitRating} style={{ width: "100%" }}>
+                Отправить оценку
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </main>
   );
 }
