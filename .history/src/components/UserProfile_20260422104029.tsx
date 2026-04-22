@@ -252,8 +252,117 @@ export default function UserProfile({ userId }: Props) {
               {user.bio || "Информация о себе отсутствует"}
             </p>
           </section>
+
+          {/* Контакты */}
+          <section
+            className="card"
+            style={{
+              padding: "24px",
+              borderRadius: "24px",
+              background: "#16a34a",
+              border: "2px solid #16a34a",
+            }}
+          >
+            <h2
+              style={{
+                margin: "0 0 16px",
+                fontSize: "18px",
+                fontWeight: 700,
+                color: "#ffffff",
+              }}
+            >
+              📋 Контакты
+            </h2>
+            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+              <div>
+                <p style={{ margin: "0 0 4px", fontSize: "12px", color: "#d1fae5", fontWeight: 600 }}>
+                  EMAIL
+                </p>
+                <a
+                  href={`mailto:${user.email}`}
+                  style={{
+                    color: "#ffffff",
+                    textDecoration: "none",
+                    fontWeight: 500,
+                    fontSize: "14px",
+                  }}
+                >
+                  {user.email}
+                </a>
+              </div>
+              <div>
+                <p style={{ margin: "0 0 4px", fontSize: "12px", color: "#d1fae5", fontWeight: 600 }}>
+                  ТЕЛЕФОН
+                </p>
+                <a
+                  href={`tel:${user.phone}`}
+                  style={{
+                    color: "#ffffff",
+                    textDecoration: "none",
+                    fontWeight: 500,
+                    fontSize: "14px",
+                  }}
+                >
+                  {user.phone}
+                </a>
+              </div>
+              <div>
+                <p style={{ margin: "0 0 4px", fontSize: "12px", color: "#d1fae5", fontWeight: 600 }}>
+                  TELEGRAM
+                </p>
+                <a
+                  href={`https://t.me/${user.telegram?.replace("@", "")}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    color: "#ffffff",
+                    textDecoration: "none",
+                    fontWeight: 500,
+                    fontSize: "14px",
+                  }}
+                >
+                  {user.telegram}
+                </a>
+              </div>
+            </div>
+          </section>
         </div>
       </div>
     </main>
+  );
+}
+
+function StatCard({ value, label }: { value: number; label: string }) {
+  return (
+    <div
+      style={{
+        padding: "12px",
+        borderRadius: "12px",
+        background: "rgba(255,255,255,0.05)",
+        textAlign: "center",
+        border: "1px solid var(--color-border)",
+      }}
+    >
+      <p
+        style={{
+          margin: "0 0 4px",
+          fontSize: "20px",
+          fontWeight: 700,
+          color: "var(--color-primary)",
+        }}
+      >
+        {value}
+      </p>
+      <p
+        style={{
+          margin: 0,
+          fontSize: "12px",
+          color: "var(--color-text-secondary)",
+          fontWeight: 500,
+        }}
+      >
+        {label}
+      </p>
+    </div>
   );
 }

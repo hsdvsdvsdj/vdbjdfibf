@@ -355,16 +355,12 @@ export default function Profile() {
               <button
                 type="button"
                 className="btn btn-primary"
-                onClick={handleSaveBio}
-                disabled={isSaving}
                 style={{
                   padding: "10px 16px",
                   borderRadius: "12px",
-                  opacity: isSaving ? 0.6 : 1,
-                  cursor: isSaving ? "not-allowed" : "pointer",
                 }}
               >
-                {isSaving ? "Сохраняю..." : "Сохранить"}
+                Сохранить
               </button>
             </div>
           </section>

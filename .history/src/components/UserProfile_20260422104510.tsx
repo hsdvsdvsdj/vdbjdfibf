@@ -257,3 +257,21 @@ export default function UserProfile({ userId }: Props) {
     </main>
   );
 }
+          color: "var(--color-primary)",
+        }}
+      >
+        {value}
+      </p>
+      <p
+        style={{
+          margin: 0,
+          fontSize: "12px",
+          color: "var(--color-text-secondary)",
+          fontWeight: 500,
+        }}
+      >
+        {label}
+      </p>
+    </div>
+  );
+}
